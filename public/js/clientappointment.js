@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Thumbnail na clickable - kung wala, "No image"
             var imageCell = image
-                ? '<button type="button" class="view-img" data-img="' + escapeHtml(image) + '" title="View reference photo">' +
+                ? '<button type="button" class="view-img" data-id="' + id + '" data-img="' + escapeHtml(image) + '" title="View reference photo">' +
                       '<img src="' + escapeHtml(image) + '" alt="Reference" class="thumb" ' +
                           'onerror="this.style.display=\'none\'">' +
                       '<span>View</span>' +
@@ -544,12 +544,257 @@ document.addEventListener('DOMContentLoaded', function () {
         tattooDetailsModal.style.display = 'flex';
     }
 
-    function openImage(src) {
+    // ==================================================
+    // IMAGE VIEWER - i-click ang picture para magpadala ng bagong larawan
+    // ==================================================
+
+    var currentImageId = null;
+
+    // Nakatagong file picker (walang binago sa EJS/CSS)
+    var photoPicker = document.createElement('input');
+    photoPicker.type = 'file';
+    photoPicker.accept = 'image/*';
+    photoPicker.style.display = 'none';
+    document.body.appendChild(photoPicker);
+
+    if (imagePreview) {
+        imagePreview.style.cursor = 'pointer';
+        imagePreview.title = 'Click to send a different photo';
+
+        imagePreview.addEventListener('click', function () {
+            if (currentImageId) {
+                photoPicker.click();
+            }
+        });
+    }
+
+    photoPicker.addEventListener('change', function () {
+        if (!photoPicker.files.length || !currentImageId) {
+            return;
+        }
+
+        var body = new FormData();
+        body.append('reference', photoPicker.files[0]);
+
+        // Walang Content-Type header - awtomatiko para sa FormData
+        request('/api/appointments/admin/' + encodeURIComponent(currentImageId) + '/reference', {
+            method: 'PUT',
+            body: body
+        })
+            .then(function (data) {
+                photoPicker.value = '';
+
+                if (!data) {
+                    return;
+                }
+
+                if (data.success) {
+                    imagePreview.src = data.appointment.reference;
+                    showMessage('Photo Updated', 'The reference photo has been saved.', true);
+                    load();
+                } else {
+                    showMessage('Upload Failed', data.message || 'Please try again.', false);
+                }
+            })
+            .catch(function (error) {
+                console.error('Error uploading photo:', error);
+                photoPicker.value = '';
+                showMessage('Upload Failed', 'An error occurred. Please try again.', false);
+            });
+    });
+
+    // ---------- Choices under the picture: Stencil Print / Photoshop / Download ----------
+
+    function setImageStatus(text, isError) {
+        var status = document.getElementById('imageActionStatus');
+
+        if (!status) {
+            return;
+        }
+
+        status.textContent = text;
+        status.style.color = isError ? '#c0392b' : '#1e7a46';
+    }
+
+    // Hinihiling sa server (parehong computer) na buksan ang larawan sa Photoshop
+    function openInPhotoshop() {
+        var src = imagePreview ? imagePreview.getAttribute('src') : '';
+
+        if (!src) {
+            return;
+        }
+
+        if (/^data:/i.test(src) || (/^https?:\/\//i.test(src) && src.indexOf(window.location.origin) !== 0)) {
+            setImageStatus('Only images saved on this server can be opened. Use Download instead.', true);
+            return;
+        }
+
+        var imagePath;
+
+        try {
+            imagePath = new URL(src, window.location.href).pathname;
+        } catch (e) {
+            imagePath = src;
+        }
+
+        setImageStatus('Opening in Photoshop...', false);
+
+        request('/api/open-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ app: 'photoshop', image: imagePath })
+        })
+            .then(function (data) {
+                if (!data) {
+                    return;
+                }
+
+                if (data.ok) {
+                    setImageStatus('Sent to Photoshop.', false);
+                } else {
+                    setImageStatus(data.error || data.message || 'Could not open the image.', true);
+                }
+            })
+            .catch(function () {
+                setImageStatus('Could not reach the server.', true);
+            });
+    }
+
+    // Binubuksan ang Stencil Print page (/fxprint) sa loob ng modal
+    function openStencil() {
+        var src = imagePreview ? imagePreview.getAttribute('src') : '';
+
+        if (!src) {
+            return;
+        }
+
+        if (/^data:/i.test(src) || (/^https?:\/\//i.test(src) && src.indexOf(window.location.origin) !== 0)) {
+            setImageStatus('Only images saved on this server can be sent to Stencil Print.', true);
+            return;
+        }
+
+        var imagePath;
+
+        try {
+            imagePath = new URL(src, window.location.href).pathname;
+        } catch (e) {
+            imagePath = src;
+        }
+
+        var overlay = document.getElementById('stencilOverlay');
+
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'stencilOverlay';
+            overlay.style.cssText = 'display:none;position:fixed;inset:0;z-index:10000;' +
+                'background:rgba(0,0,0,.6);align-items:center;justify-content:center;';
+
+            overlay.innerHTML =
+                '<div style="position:relative;width:95vw;height:92vh;background:#fff;' +
+                    'border-radius:12px;overflow:hidden;">' +
+                    '<button type="button" id="stencilClose" style="position:absolute;top:8px;right:12px;' +
+                        'z-index:2;width:36px;height:36px;border:0;border-radius:50%;background:#e63946;' +
+                        'color:#fff;font-size:22px;cursor:pointer;">&times;</button>' +
+                    '<iframe title="Stencil Print" style="width:100%;height:100%;border:0;"></iframe>' +
+                '</div>';
+
+            overlay.addEventListener('click', function (event) {
+                if (event.target === overlay) {
+                    window.closeStencil();
+                }
+            });
+
+            document.body.appendChild(overlay);
+
+            document.getElementById('stencilClose').addEventListener('click', function () {
+                window.closeStencil();
+            });
+        }
+
+        var frame = overlay.querySelector('iframe');
+
+        // Itago ang navbar (Dashboard, Inventory, ... Logout) sa loob ng modal
+        frame.onload = function () {
+            try {
+                var doc = frame.contentDocument;
+
+                if (!doc || !doc.head || doc.getElementById('embedHideNav')) {
+                    return;
+                }
+
+                var style = doc.createElement('style');
+                style.id = 'embedHideNav';
+                style.textContent = '.navbar{display:none !important;}' +
+                    '.st-app{padding-top:16px;}';
+                doc.head.appendChild(style);
+            } catch (e) {
+                console.warn('Could not hide navbar in Stencil Print modal:', e);
+            }
+        };
+
+        frame.src = '/fxprint?embed=1&image=' + encodeURIComponent(imagePath);
+        overlay.style.display = 'flex';
+    }
+
+    window.closeStencil = function () {
+        var overlay = document.getElementById('stencilOverlay');
+
+        if (overlay) {
+            overlay.style.display = 'none';
+            overlay.querySelector('iframe').src = 'about:blank';
+        }
+    };
+
+    function ensureImageActions() {
+        if (!imageModal || !imagePreview || imageModal.querySelector('.image-actions')) {
+            return;
+        }
+
+        var bar = document.createElement('div');
+        bar.className = 'image-actions';
+        bar.style.cssText = 'display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px;';
+
+        bar.innerHTML =
+            '<button type="button" class="save-btn" data-app="stencil">Stencil Print</button>' +
+            '<button type="button" class="save-btn" data-app="photoshop">Open in Photoshop</button>' +
+            '<a class="cancel-modal-btn" id="imageDownloadLink" download ' +
+                'style="text-decoration:none;display:inline-block;">Download</a>' +
+            '<span id="imageActionStatus" style="width:100%;font-size:13px;"></span>';
+
+        bar.addEventListener('click', function (event) {
+            var button = event.target.closest('button[data-app]');
+
+            if (!button) {
+                return;
+            }
+
+            if (button.getAttribute('data-app') === 'stencil') {
+                openStencil();
+            } else {
+                openInPhotoshop();
+            }
+        });
+
+        imagePreview.insertAdjacentElement('afterend', bar);
+    }
+
+    function openImage(src, id) {
+        currentImageId = id || null;
+
         if (imagePreview) {
             imagePreview.src = src;
         }
 
         if (imageModal) {
+            ensureImageActions();
+
+            var download = document.getElementById('imageDownloadLink');
+
+            if (download) {
+                download.href = src;
+            }
+
+            setImageStatus('', false);
             imageModal.style.display = 'flex';
         } else {
             window.open(src, '_blank');
@@ -562,7 +807,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var imageButton = event.target.closest('.view-img');
 
         if (imageButton) {
-            openImage(imageButton.getAttribute('data-img'));
+            openImage(imageButton.getAttribute('data-img'), imageButton.getAttribute('data-id'));
             return;
         }
 
@@ -696,6 +941,7 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     window.closeImage = function () {
+        currentImageId = null;
         if (imageModal) {
             imageModal.style.display = 'none';
         }
@@ -737,6 +983,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
+            window.closeStencil();
             window.closeReschedule();
             window.closeMessage();
             window.closeImage();

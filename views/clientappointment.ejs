@@ -7,8 +7,6 @@
 
     <link rel="stylesheet" href="/css/appointment.css">
     <link rel="stylesheet" href="/css/dashboard.css">
-
-    
 </head>
 
 <body>
@@ -35,37 +33,35 @@
     <main class="container">
 
         <div class="page-header">
-
             <div>
                 <h1>Client Appointments</h1>
                 <p>Manage and monitor all client appointments.</p>
             </div>
-
         </div>
 
 
         <section class="dashboard-overview overview-row">
 
             <div class="overview-card">
-                <span class="overview-label"><span class="icon">📅</span> Bookings</span>
+                <span class="overview-label"><span class="icon"></span> Bookings</span>
                 <span class="overview-value" id="statBookings">0</span>
                 <span class="delta up" id="statBookingsDelta">0% last month</span>
             </div>
 
             <div class="overview-card">
-                <span class="overview-label"><span class="icon">💰</span> Revenue</span>
+                <span class="overview-label"><span class="icon"></span> Revenue</span>
                 <span class="overview-value" id="statRevenue">₱0</span>
                 <span class="delta up" id="statRevenueDelta">0% last month</span>
             </div>
 
             <div class="overview-card">
-                <span class="overview-label"><span class="icon">📊</span> Avg Booking Value</span>
+                <span class="overview-label"><span class="icon"></span> Avg Booking Value</span>
                 <span class="overview-value" id="statAverage">₱0</span>
                 <span class="delta up" id="statAverageDelta">0% last month</span>
             </div>
 
             <div class="overview-card">
-                <span class="overview-label"><span class="icon">🚫</span> No Show Rate</span>
+                <span class="overview-label"><span class="icon"></span> No Show Rate</span>
                 <span class="overview-value" id="statNoShow">0%</span>
                 <span class="delta up" id="statNoShowDelta">0% last month</span>
             </div>
@@ -76,11 +72,7 @@
         <section class="controls">
 
             <div class="search-box">
-                <input
-                    type="text"
-                    id="searchInput"
-                    placeholder="Search client..."
-                >
+                <input type="text" id="searchInput" placeholder="Search client...">
             </div>
 
             <select id="statusFilter">
@@ -91,19 +83,6 @@
                 <option value="Completed">Completed</option>
                 <option value="Cancelled">Cancelled</option>
             </select>
-
-            <select id="sizeFilter">
-                <option value="all">All Sizes</option>
-                <option value="Small">Small</option>
-                <option value="Medium">Medium</option>
-                <option value="Large">Large</option>
-                <option value="Custom">Custom</option>
-            </select>
-
-            <input
-                type="date"
-                id="dateFilter"
-            >
 
         </section>
 
@@ -148,6 +127,7 @@
     </main>
 
 
+    <!-- RESCHEDULE -->
     <div id="rescheduleModal" class="modal">
 
         <div class="modal-content">
@@ -159,14 +139,9 @@
                     <p>Change the client's appointment schedule.</p>
                 </div>
 
-                <button
-                    class="close-btn"
-                    onclick="closeReschedule()">
-                    &times;
-                </button>
+                <button class="close-btn" onclick="closeReschedule()">&times;</button>
 
             </div>
-
 
             <div class="client-details">
 
@@ -182,60 +157,23 @@
 
             </div>
 
-
             <form id="rescheduleForm">
 
                 <div class="form-group">
-
-                    <label for="newDate">
-                        New Appointment Date
-                    </label>
-
-                    <input
-                        type="date"
-                        id="newDate"
-                        required
-                    >
-
+                    <label for="newDate">New Appointment Date</label>
+                    <input type="date" id="newDate" required>
                 </div>
-
 
                 <div class="form-group">
-
-                    <label for="newTime">
-                        New Appointment Time
-                    </label>
-
-                    <input
-                        type="time"
-                        id="newTime"
-                        required
-                    >
-
+                    <label for="newTime">New Appointment Time</label>
+                    <input type="time" id="newTime" required>
                 </div>
 
-
-                <div
-                    id="conflictMessage"
-                    class="conflict-message">
-                </div>
-
+                <div id="conflictMessage" class="conflict-message"></div>
 
                 <div class="modal-actions">
-
-                    <button
-                        type="button"
-                        class="cancel-modal-btn"
-                        onclick="closeReschedule()">
-                        Cancel
-                    </button>
-
-                    <button
-                        type="submit"
-                        class="save-btn">
-                        Save Schedule
-                    </button>
-
+                    <button type="button" class="cancel-modal-btn" onclick="closeReschedule()">Cancel</button>
+                    <button type="submit" class="save-btn">Save Schedule</button>
                 </div>
 
             </form>
@@ -244,10 +182,6 @@
 
     </div>
 
-
-    <!-- ==================================================
-         REFERENCE PHOTO
-         ================================================== -->
 
     <div id="imageModal" class="modal">
 
@@ -260,11 +194,7 @@
                     <p>Design reference uploaded by the client.</p>
                 </div>
 
-                <button
-                    class="close-btn"
-                    onclick="closeImage()">
-                    &times;
-                </button>
+                <button class="close-btn" onclick="closeImage()">&times;</button>
 
             </div>
 
@@ -282,10 +212,7 @@
     </div>
 
 
-    <!-- ==================================================
-         TATTOO DETAILS - size, inches, placement, amount
-         ================================================== -->
-
+    <!-- TATTOO DETAILS -->
     <div id="tattooDetailsModal" class="modal">
 
         <div class="modal-content" style="max-width: 420px;">
@@ -297,11 +224,7 @@
                     <p>Size, placement and computed amount.</p>
                 </div>
 
-                <button
-                    class="close-btn"
-                    onclick="closeTattooDetails()">
-                    &times;
-                </button>
+                <button class="close-btn" onclick="closeTattooDetails()">&times;</button>
 
             </div>
 
@@ -334,10 +257,7 @@
     </div>
 
 
-    <!-- ==================================================
-         PAYMENT
-         ================================================== -->
-
+    <!-- PAYMENT -->
     <div id="paymentModal" class="modal">
 
         <div class="modal-content" style="max-width: 380px;">
@@ -349,28 +269,14 @@
                     <p>Choose how the client paid.</p>
                 </div>
 
-                <button
-                    class="close-btn"
-                    onclick="closePayment()">
-                    &times;
-                </button>
+                <button class="close-btn" onclick="closePayment()">&times;</button>
 
             </div>
 
             <div class="payment-options">
-
-                <button type="button" class="save-btn" data-pay="GCash">
-                    GCash
-                </button>
-
-                <button type="button" class="save-btn" data-pay="Cash">
-                    Cash
-                </button>
-
-                <button type="button" class="cancel-modal-btn" data-pay="Unpaid">
-                    Unpaid
-                </button>
-
+                <button type="button" class="save-btn" data-pay="GCash">GCash</button>
+                <button type="button" class="save-btn" data-pay="Cash">Cash</button>
+                <button type="button" class="cancel-modal-btn" data-pay="Unpaid">Unpaid</button>
             </div>
 
         </div>
@@ -378,27 +284,18 @@
     </div>
 
 
+    <!-- MESSAGE -->
     <div id="messageModal" class="modal">
 
         <div class="message-content">
 
-            <div id="messageIcon" class="message-icon">
-                &#10003;
-            </div>
+            <div id="messageIcon" class="message-icon">&#10003;</div>
 
-            <h2 id="messageTitle">
-                Appointment Updated
-            </h2>
+            <h2 id="messageTitle">Appointment Updated</h2>
 
-            <p id="messageText">
-                The appointment has been updated successfully.
-            </p>
+            <p id="messageText">The appointment has been updated successfully.</p>
 
-            <button
-                class="save-btn"
-                onclick="closeMessage()">
-                OK
-            </button>
+            <button class="save-btn" onclick="closeMessage()">OK</button>
 
         </div>
 
@@ -406,6 +303,6 @@
 
 
     <script src="/js/clientappointment.js"></script>
-
+    <script src="/js/open-image.js"></script>
 </body>
 </html>

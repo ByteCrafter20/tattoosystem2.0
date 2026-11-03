@@ -97,6 +97,19 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// Minimum stock can come back under different field names depending on
+// the database model. Use whichever one exists; fall back to 0.
+function getMinStock(item) {
+    var keys = ['reorderLevel', 'minimumStock', 'minStock', 'minimumQuantity', 'lowStockThreshold'];
+    for (var i = 0; i < keys.length; i++) {
+        var value = item[keys[i]];
+        if (value !== undefined && value !== null && value !== '') {
+            return value;
+        }
+    }
+    return 0;
+}
+
 function categoryOfItem(item) {
     for (var category in ITEMS_BY_CATEGORY) {
         if (ITEMS_BY_CATEGORY[category].indexOf(item) !== -1) {
@@ -216,8 +229,8 @@ async function loadInventory() {
                     '<td><strong>' + escapeHtml(item.name) + '</strong></td>' +
                     '<td>' + escapeHtml(item.category) + '</td>' +
                     '<td>' + item.quantity + '</td>' +
-                    '<td>₱' + Number(item.price).toFixed(2) + '</td>' +
-                    '<td>' + item.reorderLevel + '</td>' +
+                    '<td>₱' + Number(item.price || 0).toFixed(2) + '</td>' +
+                    '<td>' + escapeHtml(getMinStock(item)) + '</td>' +
                     '<td><span class="stock-status ' + statusClass + '">' + escapeHtml(item.status) + '</span></td>' +
                     '<td>' +
                         '<button class="action-btn add-qty-btn" title="Add stock" ' +
@@ -282,17 +295,22 @@ async function saveItem(event) {
     var priceInput = document.getElementById('itemPrice');
     var supplierInput = document.getElementById('itemSupplier');
     var price = priceInput ? parseFloat(priceInput.value) : 0;
+    var minStock = parseInt(document.getElementById('minimumStock').value, 10);
 
     var data = {
         name: getItemName(),
         category: document.getElementById('itemCategory').value,
         quantity: parseInt(document.getElementById('itemQuantity').value, 10),
         price: isNaN(price) ? 0 : price,
-        reorderLevel: parseInt(document.getElementById('minimumStock').value, 10),
+        // Sent under every common name so the server saves it
+        // whichever field its model uses.
+        reorderLevel: minStock,
+        minimumStock: minStock,
+        minStock: minStock,
         supplier: supplierInput ? supplierInput.value.trim() : ''
     };
 
-    if (!data.name || !data.category || isNaN(data.quantity) || isNaN(data.reorderLevel)) {
+    if (!data.name || !data.category || isNaN(data.quantity) || isNaN(minStock)) {
         showNotification('Please fill in all fields', 'error');
         return;
     }

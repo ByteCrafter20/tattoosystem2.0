@@ -51,6 +51,16 @@
             .replace(/"/g, '&quot;');
     }
 
+    // Returns the first non-empty value among several possible field names
+    function pick(a, keys, fallback) {
+        for (var i = 0; i < keys.length; i++) {
+            if (a[keys[i]] !== undefined && a[keys[i]] !== null && a[keys[i]] !== '') {
+                return a[keys[i]];
+            }
+        }
+        return fallback;
+    }
+
     function formatDate(value) {
         var date = new Date(value);
 
@@ -95,28 +105,12 @@
     }
 
     function renderStats(stats) {
-        setText(
-            'totalAppointments',
-            Number(stats.count || 0).toLocaleString()
-        );
-
-        setText(
-            'totalRevenue',
-            peso(stats.revenue)
-        );
-
-        setText(
-            'avgBookingValue',
-            peso(stats.average)
-        );
-
-        setText(
-            'noShowRate',
-            (stats.noShowRate || 0) + '%'
-        );
+        setText('totalAppointments', Number(stats.count || 0).toLocaleString());
+        setText('totalRevenue', peso(stats.revenue));
+        setText('avgBookingValue', peso(stats.average));
+        setText('noShowRate', (stats.noShowRate || 0) + '%');
     }
 
-    // FIX: Booking Insight
     function renderBookingInsight(rows) {
         var element = document.getElementById('bookingInsight');
 
@@ -172,65 +166,64 @@
             '</div>';
     }
 
-    function renderUpcoming(rows) {
-        var tbody = document.querySelector('.appointments-table tbody');
+    var NAME_KEYS = ['clientName', 'name', 'fullName', 'customerName', 'client'];
+    var TYPE_KEYS = ['bookingType', 'type', 'appointmentType', 'service', 'paymentMethod'];
+    var STYLE_KEYS = ['tattooType', 'style', 'tattooStyle', 'tattooSize', 'placement'];
+    var DATE_KEYS = ['date', 'appointmentDate', 'bookingDate', 'preferredDate', 'scheduledDate', 'createdAt'];
+    var TIME_KEYS = ['time', 'appointmentTime', 'timeSlot'];
 
-        if (!tbody) return;
+    // Fills BOTH the "New Bookings Feed" table and the "Upcoming Appointments" box
+    // Needs in your EJS:
+    //   <tbody id="newBookingsBody"></tbody>
+    //   <div id="upcomingList"></div>
+    function renderUpcoming(rows) {
+        var feedBody = document.getElementById('newBookingsBody');
+        var upcomingBox = document.getElementById('upcomingList');
 
         var today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        var upcoming = rows
-            .filter(function (a) {
-                var appointmentDate = new Date(a.date);
+        var active = rows.filter(function (a) {
+            return a.status !== 'Cancelled';
+        });
 
-                return appointmentDate >= today &&
-                    a.status !== 'Cancelled';
-            })
-            .sort(function (a, b) {
-                return new Date(a.date) - new Date(b.date);
-            })
-            .slice(0, 5);
+        // Upcoming = today or later (invalid dates are kept, not dropped)
+        var upcoming = active.filter(function (a) {
+            var d = new Date(pick(a, DATE_KEYS, ''));
+            return isNaN(d.getTime()) || d >= today;
+        }).sort(function (a, b) {
+            return new Date(pick(a, DATE_KEYS, 0)) -
+                   new Date(pick(b, DATE_KEYS, 0));
+        }).slice(0, 5);
 
-        if (!upcoming.length) {
-            tbody.innerHTML =
-                '<tr>' +
-                    '<td colspan="5" class="no-records">' +
-                        'No upcoming appointments' +
-                    '</td>' +
+        // New Bookings Feed: newest created first, regardless of date
+        var newest = active.slice().sort(function (a, b) {
+            return new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date);
+        }).slice(0, 5);
+
+        if (feedBody) {
+            feedBody.innerHTML = newest.length ? newest.map(function (a) {
+                return '<tr>' +
+                    '<td>' + escapeHtml(pick(a, NAME_KEYS, 'N/A')) + '</td>' +
+                    '<td>' + escapeHtml(pick(a, TYPE_KEYS, 'N/A')) + '</td>' +
+                    '<td>' + escapeHtml(pick(a, STYLE_KEYS, 'N/A')) + '</td>' +
+                    '<td>' + formatDate(pick(a, DATE_KEYS, '')) + ' ' +
+                        escapeHtml(pick(a, TIME_KEYS, '')) + '</td>' +
                 '</tr>';
-
-            return;
+            }).join('') : '<tr><td colspan="4" class="no-records">No new bookings</td></tr>';
         }
 
-        tbody.innerHTML = upcoming.map(function (a) {
-            var cls = statusClass(a.status);
-
-            return '<tr>' +
-                '<td>' +
-                    escapeHtml(a.clientName || 'N/A') +
-                '</td>' +
-
-                '<td>' +
-                    formatDate(a.date) +
-                '</td>' +
-
-                '<td>' +
-                    escapeHtml(a.time || 'N/A') +
-                '</td>' +
-
-                '<td>' +
-                    escapeHtml(a.tattooType || 'N/A') +
-                '</td>' +
-
-                '<td>' +
-                    '<span class="' + cls + '">' +
-                        escapeHtml(a.status || 'Pending') +
-                    '</span>' +
-                '</td>' +
-
-            '</tr>';
-        }).join('');
+        if (upcomingBox) {
+            upcomingBox.innerHTML = upcoming.length ? upcoming.map(function (a) {
+                return '<div class="upcoming-item">' +
+                    '<strong>' + escapeHtml(pick(a, NAME_KEYS, 'N/A')) + '</strong> ' +
+                    '<span>' + formatDate(pick(a, DATE_KEYS, '')) + ' ' +
+                        escapeHtml(pick(a, TIME_KEYS, '')) + '</span> ' +
+                    '<span class="' + statusClass(a.status) + '">' +
+                        escapeHtml(a.status || 'Pending') + '</span>' +
+                '</div>';
+            }).join('') : '<div class="no-records">No upcoming appointments</div>';
+        }
     }
 
     function refreshDashboard() {
@@ -239,10 +232,7 @@
         })
         .then(function (response) {
             if (!response.ok) {
-                throw new Error(
-                    'Failed to fetch appointments: ' +
-                    response.status
-                );
+                throw new Error('Failed to fetch appointments: ' + response.status);
             }
 
             return response.json();
@@ -250,29 +240,18 @@
         .then(function (payload) {
 
             if (!payload || !Array.isArray(payload.appointments)) {
-                console.error(
-                    'Invalid API response:',
-                    payload
-                );
+                console.error('Invalid API response:', payload);
                 return;
             }
 
             var rows = payload.appointments;
 
-            var stats = summarize(rows);
-
-            renderStats(stats);
-
+            renderStats(summarize(rows));
             renderUpcoming(rows);
-
-            // IMPORTANT FIX
             renderBookingInsight(rows);
         })
         .catch(function (error) {
-            console.error(
-                'Dashboard refresh error:',
-                error
-            );
+            console.error('Dashboard refresh error:', error);
         });
     }
 
@@ -280,56 +259,35 @@
 
         if (document.getElementById('totalAppointments')) {
             refreshDashboard();
-
-            setInterval(
-                refreshDashboard,
-                REFRESH_MS
-            );
+            setInterval(refreshDashboard, REFRESH_MS);
         }
 
         pairs.forEach(function (pair) {
             var select = document.getElementById(pair.select);
 
             if (select) {
-                select.addEventListener(
-                    'change',
-                    window[pair.handler]
-                );
+                select.addEventListener('change', window[pair.handler]);
             }
         });
 
-        var gallerySelects =
-            document.querySelectorAll('.gallery-select');
+        var gallerySelects = document.querySelectorAll('.gallery-select');
 
-        Array.prototype.forEach.call(
-            gallerySelects,
-            function (select) {
+        Array.prototype.forEach.call(gallerySelects, function (select) {
 
-                var figure =
-                    select.closest('.gallery-item');
+            var figure = select.closest('.gallery-item');
+            var image = figure ? figure.querySelector('.gallery-image') : null;
 
-                var image =
-                    figure
-                        ? figure.querySelector('.gallery-image')
-                        : null;
+            if (!image) return;
 
-                if (!image) return;
-
-                function updateImage() {
-                    if (select.value) {
-                        image.src =
-                            imageUrl(select.value);
-                    }
+            function updateImage() {
+                if (select.value) {
+                    image.src = imageUrl(select.value);
                 }
-
-                select.addEventListener(
-                    'change',
-                    updateImage
-                );
-
-                updateImage();
             }
-        );
+
+            select.addEventListener('change', updateImage);
+            updateImage();
+        });
 
     });
 

@@ -397,6 +397,51 @@ router.put("/admin/:id/reschedule", requireAdmin, async (req, res) => {
     }
 });
 
+// ======================================================
+// BAGO - palitan ang reference photo ng isang appointment
+// (galing sa pag-click ng picture sa Reference Photo modal)
+// ======================================================
+
+router.put("/admin/:id/reference", requireAdmin, upload.single("reference"), async (req, res) => {
+    try {
+        if (!isValidId(req.params.id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid appointment id."
+            });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Please choose an image file."
+            });
+        }
+
+        const appointment = await Appointment.findByIdAndUpdate(
+            req.params.id,
+            { reference: "/uploads/" + req.file.filename },
+            { new: true }
+        );
+
+        if (!appointment) {
+            return res.status(404).json({
+                success: false,
+                message: "Appointment not found."
+            });
+        }
+
+        return res.json({ success: true, appointment });
+
+    } catch (error) {
+        console.error("PUT /api/appointments/admin/:id/reference", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to update photo."
+        });
+    }
+});
+
 // Para ma-ayos ng admin ang Size, Placement, at Amount ng lumang booking.
 router.put("/admin/:id/details", requireAdmin, async (req, res) => {
     try {

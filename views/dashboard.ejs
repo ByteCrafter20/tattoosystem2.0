@@ -95,25 +95,25 @@
                 <section class="dashboard-overview">
 
                     <div class="overview-card">
-                        <span class="overview-label"><span class="icon">📅</span> Bookings</span>
+                        <span class="overview-label"><span class="icon"></span> Bookings</span>
                         <span class="overview-value" id="totalAppointments"><%= totalBookings.toLocaleString() %></span>
                         <span class="<%= deltaClass(bookingsDelta) %>" id="bookingsDelta"><%= deltaLabel(bookingsDelta) %></span>
                     </div>
 
                     <div class="overview-card">
-                        <span class="overview-label"><span class="icon">💰</span> Revenue</span>
+                        <span class="overview-label"><span class="icon"></span> Revenue</span>
                         <span class="overview-value" id="totalRevenue">₱<%= revenue.toLocaleString() %></span>
                         <span class="<%= deltaClass(revenueDelta) %>" id="revenueDelta"><%= deltaLabel(revenueDelta) %></span>
                     </div>
 
                     <div class="overview-card">
-                        <span class="overview-label"><span class="icon">📊</span> Avg Booking Value</span>
+                        <span class="overview-label"><span class="icon"></span> Avg Booking Value</span>
                         <span class="overview-value" id="avgBookingValue">₱<%= avgBookingValue.toLocaleString() %></span>
                         <span class="<%= deltaClass(avgDelta) %>" id="avgDelta"><%= deltaLabel(avgDelta) %></span>
                     </div>
 
                     <div class="overview-card">
-                        <span class="overview-label"><span class="icon">🚫</span> No Show Rate</span>
+                        <span class="overview-label"><span class="icon"></span> No Show Rate</span>
                         <span class="overview-value" id="noShowRate"><%= noShowRate %>%</span>
                         <span class="<%= deltaClass(noShowDelta) %>" id="noShowDelta"><%= deltaLabel(noShowDelta) %></span>
                     </div>

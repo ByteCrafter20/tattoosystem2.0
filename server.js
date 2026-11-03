@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import mongoose from "mongoose";
 import multer from "multer";
 import fs from "fs";
+import { spawn, exec } from "child_process";
 import connectDB from "./config/Database.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
@@ -779,6 +780,11 @@ app.get("/photos", (req, res) => {
     res.render("photos", { role: req.cookies.role || "client" });
 });
 
+// FxPrint page
+app.get(["/fxprint", "/fxprint.ejs"], requireRole("admin"), (req, res) => {
+    res.render("fxprint");
+});
+
 app.get("/reports", (req, res) => {
     res.render("report&records");
 });
@@ -803,11 +809,11 @@ app.post("/login", async (req, res) => {
     let username = "";
     let password = "";
 
-    if (req.body.username) {
+    if (req.body && req.body.username) {
         username = req.body.username.trim();
     }
 
-    if (req.body.password) {
+    if (req.body && req.body.password) {
         password = req.body.password;
     }
 
@@ -984,6 +990,69 @@ app.get('/api/appointments/admin/all', requireRole('admin'), async (req, res) =>
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
+});
+
+// ======================================================
+// OPEN IMAGE IN PHOTOSHOP / FXPRINT
+// Works because the server and the browser run on the same PC.
+// ======================================================
+
+const OPEN_IMAGE_APPS = {
+    photoshop: path.normalize(process.env.PHOTOSHOP_PATH || "D:/PhotoshopPortable/Adobe Photoshop CS3.exe"),
+    fxprint: path.normalize(process.env.FXPRINT_PATH || "C:/Program Files (x86)/FxPrint/FxPrint.exe")
+};
+
+app.post("/api/open-image", requireRole("admin"), (req, res) => {
+    const exe = OPEN_IMAGE_APPS[req.body && req.body.app];
+
+    if (!exe) {
+        return res.status(400).json({ error: "Unknown application." });
+    }
+
+    if (!fs.existsSync(exe)) {
+        return res.status(500).json({
+            error: "Program not found. Fix its path in server.js: " + exe
+        });
+    }
+
+    // basename() blocks "../" tricks - only a plain file name is accepted,
+    // and only from public/uploads (bookingUploadDir).
+    const fileName = path.basename(String((req.body && req.body.image) || ""));
+
+    if (!/\.(jpg|jpeg|png|gif|webp|bmp|tif|tiff)$/i.test(fileName)) {
+        return res.status(400).json({ error: "Not an image file." });
+    }
+
+    const filePath = path.join(bookingUploadDir, fileName);
+
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: "Image file not found on the server." });
+    }
+
+    try {
+        // Added cwd to ensure portable apps load their plugins correctly
+        const child = spawn(exe, [filePath], { 
+            detached: true, 
+            stdio: "ignore",
+            cwd: path.dirname(exe) 
+        });
+
+        child.on("error", (error) => {
+            console.error("Spawn failed, trying fallback exec...", error);
+            
+            // Fallback for stubborn portable apps that refuse to launch via spawn
+            exec(`start "" "${exe}" "${filePath}"`, { cwd: path.dirname(exe) });
+        });
+
+        child.unref();
+        
+    } catch (err) {
+        console.error("Error launching app:", err);
+        // Fallback
+        exec(`start "" "${exe}" "${filePath}"`, { cwd: path.dirname(exe) });
+    }
+
+    return res.json({ ok: true });
 });
 
 app.use("/api", (req, res) => {

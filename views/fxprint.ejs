@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stencil Print - Tattoo Home-Based Management System</title>
+
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/fxprint.css">
+
+    <!-- Laki ng papel kapag nagpi-print (binabago ng stencil.js) -->
+    <style id="stPageStyle">@page { size: A4; margin: 0; }</style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+        <div class="logo">
+            <img src="/images/TotatsSkinArtTattoo.jpg" alt="Totats Skin Art Tattoo Logo">
+            Totats<span>Skin Art Tattoo</span>
+        </div>
+
+        <ul class="nav-links">
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/clientappointment">Appointment of a Client</a></li>
+            <li><a href="/inventory">Inventory</a></li>
+            <li><a href="/reports">Reports &amp; Records</a></li>
+            <li><a href="/photos">Photos Gallery</a></li>
+            <li><a href="/stencil" class="active">Stencil Print</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+
+    </nav>
+
+
+    <main class="st-app">
+
+        <header class="st-header">
+            <h1>Stencil Print</h1>
+            <p>Turn any picture into a printable tattoo stencil. Choose a design, adjust it, preview it on paper, then print.</p>
+        </header>
+
+        <div class="st-layout">
+
+            <!-- ==================================================
+                 TOOLS
+                 ================================================== -->
+            <aside class="st-tools">
+
+                <!-- 1. PICTURE -->
+                <section class="st-card">
+                    <h2><span class="st-step">1</span> Picture</h2>
+
+                    <label class="st-drop" id="stDrop" for="stFile">
+                        <strong>Choose a file</strong>
+                        <span>or drag a picture here</span>
+                    </label>
+                    <input type="file" id="stFile" accept="image/*" hidden>
+
+                    <button type="button" class="st-btn st-btn-light st-full" id="stOpenLibrary">
+                        Open Library
+                    </button>
+
+                    <small class="st-muted" id="stFileName">No picture selected.</small>
+                </section>
+
+                <!-- 2. PICTURE FILTERS -->
+                <section class="st-card">
+                    <h2><span class="st-step">2</span> Picture Filters</h2>
+
+                    <div class="st-filters" id="stFilters">
+                        <button type="button" class="st-chip" data-filter="original">Original</button>
+                        <button type="button" class="st-chip" data-filter="gray">Grayscale</button>
+                        <button type="button" class="st-chip active" data-filter="stencil">Stencil</button>
+                        <button type="button" class="st-chip" data-filter="lineart">Line Art</button>
+                    </div>
+
+                    <div class="st-field">
+                        <label for="stBrightness">Brightness <output id="stBrightnessOut">0</output></label>
+                        <input type="range" id="stBrightness" min="-100" max="100" value="0">
+                    </div>
+
+                    <div class="st-field">
+                        <label for="stContrast">Contrast <output id="stContrastOut">0</output></label>
+                        <input type="range" id="stContrast" min="-100" max="100" value="0">
+                    </div>
+
+                    <div class="st-field" id="stLevelField">
+                        <label for="stLevel">Detail level <output id="stLevelOut">128</output></label>
+                        <input type="range" id="stLevel" min="1" max="255" value="128">
+                    </div>
+
+                    <div class="st-checks">
+                        <label><input type="checkbox" id="stInvert"> Invert</label>
+                        <label><input type="checkbox" id="stMirror"> Mirror (flip)</label>
+                    </div>
+
+                    <button type="button" class="st-btn st-btn-light st-full" id="stRotate">
+                        Rotate 90&deg;
+                    </button>
+                </section>
+
+                <!-- 3. SIZE -->
+                <section class="st-card">
+                    <h2><span class="st-step">3</span> Size &amp; Paper</h2>
+
+                    <div class="st-row">
+                        <div class="st-field">
+                            <label for="stWidth">Width (in)</label>
+                            <input type="number" id="stWidth" min="0.5" max="30" step="0.1" value="4">
+                        </div>
+                        <div class="st-field">
+                            <label for="stHeight">Height (in)</label>
+                            <input type="number" id="stHeight" min="0.5" max="30" step="0.1" value="4">
+                        </div>
+                    </div>
+
+                    <div class="st-checks">
+                        <label><input type="checkbox" id="stLock" checked> Keep proportions</label>
+                    </div>
+
+                    <div class="st-field">
+                        <label for="stPaper">Paper</label>
+                        <select id="stPaper">
+                            <option value="A4">A4 (8.27 x 11.69 in)</option>
+                            <option value="Letter">Letter (8.5 x 11 in)</option>
+                            <option value="A5">A5 (5.83 x 8.27 in)</option>
+                            <option value="4x6">4 x 6 in</option>
+                        </select>
+                    </div>
+
+                    <small class="st-muted" id="stSizeNote"></small>
+                </section>
+
+                <!-- 4. PRINT -->
+                <section class="st-card">
+                    <h2><span class="st-step">4</span> Print</h2>
+
+                    <button type="button" class="st-btn st-full" id="stPrint" disabled>Print Stencil</button>
+                    <button type="button" class="st-btn st-btn-light st-full" id="stDownload" disabled>Download PNG</button>
+
+                    <small class="st-muted">
+                        In the print window choose your printer, set scale to <strong>100%</strong>
+                        (no &ldquo;fit to page&rdquo;) so the stencil comes out at the exact size.
+                    </small>
+                </section>
+
+            </aside>
+
+
+            <!-- ==================================================
+                 PRINT PREVIEW
+                 ================================================== -->
+            <section class="st-preview">
+
+                <div class="st-preview-head">
+                    <h2>Print Preview</h2>
+                    <span class="st-muted" id="stPreviewInfo"></span>
+                </div>
+
+                <div class="st-paper-wrap">
+                    <div class="st-paper" id="stPaperBox">
+                        <canvas id="stCanvas" class="st-canvas" width="1" height="1"></canvas>
+                        <div class="st-empty" id="stEmpty">
+                            Choose a picture or open the Library to start.
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+
+    <!-- ==================================================
+         LIBRARY
+         ================================================== -->
+    <div id="stLibrary" class="st-modal">
+
+        <div class="st-modal-box">
+
+            <div class="st-modal-head">
+                <div>
+                    <h2>Library</h2>
+                    <p class="st-muted">Pick a design or a client's reference photo.</p>
+                </div>
+                <button type="button" class="st-close" id="stCloseLibrary">&times;</button>
+            </div>
+
+            <div class="st-tabs">
+                <button type="button" class="st-tab active" data-tab="designs">Designs</button>
+                <button type="button" class="st-tab" data-tab="gallery">Gallery</button>
+                <button type="button" class="st-tab" data-tab="references">Client References</button>
+            </div>
+
+            <div class="st-lib-grid" id="stLibGrid"></div>
+            <div class="st-muted st-lib-empty" id="stLibEmpty">Loading...</div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Ito lang ang lalabas kapag nagpi-print -->
+    <div id="stPrintSheet">
+        <img id="stPrintImage" alt="Stencil">
+    </div>
+
+
+    <script src="/js/fxprint.js"></script>
+</body>
+</html>
