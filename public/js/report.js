@@ -2,13 +2,28 @@
 //
 // Reports & Records - lahat galing sa MongoDB.
 //     GET /api/appointments/admin/reports
+//     GET /api/inventory   (para sa Inventory table at Total Items / In Stock / Low Stock / Out of Stock)
 //
-// Bago: "Reference Photos" na nasa baba, katabi ng Client Records.
+// "Reference Photos" nasa baba, katabi ng Client Records.
+// May kasama na ring Hamburger Menu (mobile).
 
 document.addEventListener('DOMContentLoaded', function () {
 
     var appointments = [];
     var clients = [];
+
+    // ====== CHANGE THESE IF NEEDED ======
+    var INVENTORY_URL = '/api/inventory';
+    var DEFAULT_LOW_LEVEL = 5;   // gagamitin kung walang minStock ang item
+
+    // IDs ng 4 inventory cards sa HTML mo. Unang makita ang gagamitin.
+    var CARD_IDS = {
+        total: ['totalItems', 'total-items', 'totalItemsCount'],
+        inStock: ['inStockCount', 'inStock', 'in-stock', 'inStockItems'],
+        low: ['lowStockCount', 'lowStock', 'low-stock', 'lowStockItems'],
+        out: ['outOfStockCount', 'outOfStock', 'out-of-stock', 'outOfStockItems']
+    };
+    // ====================================
 
     var recordsTable = document.getElementById('recordsTable');
     var noRecords = document.getElementById('noRecords');
@@ -17,6 +32,9 @@ document.addEventListener('DOMContentLoaded', function () {
     var photoGrid = document.getElementById('photoGrid');
     var noPhotos = document.getElementById('noPhotos');
     var shownCount = document.getElementById('shownCount');
+
+    var inventoryTable = document.getElementById('inventoryTable');
+    var noInventory = document.getElementById('noInventory');
 
     var searchInput = document.getElementById('searchInput');
     var statusFilter = document.getElementById('statusFilter');
@@ -63,6 +81,22 @@ document.addEventListener('DOMContentLoaded', function () {
         if (el) {
             el.textContent = value;
         }
+    }
+
+    // Para sa inventory cards: sumusubok ng ilang posibleng ID
+    function setCard(key, value) {
+        var ids = CARD_IDS[key];
+
+        for (var i = 0; i < ids.length; i++) {
+            var el = document.getElementById(ids[i]);
+
+            if (el) {
+                el.textContent = value;
+                return;
+            }
+        }
+
+        console.warn('Card element not found for "' + key + '". Tried IDs: ' + ids.join(', '));
     }
 
     function request(url, options) {
@@ -128,6 +162,165 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         return '/' + clean;
+    }
+
+    // ==================================================
+    // HAMBURGER MENU
+    // (Wag nang i-load ang /js/hamburger.js - nandito na ito)
+    // ==================================================
+
+    var hamburgerBtn = document.getElementById('hamburgerBtn');
+    var mobileMenu = document.getElementById('navLinks');
+
+    if (hamburgerBtn && mobileMenu) {
+        var setMenuOpen = function (isOpen) {
+            hamburgerBtn.classList.toggle('open', isOpen);
+            mobileMenu.classList.toggle('open', isOpen);
+            hamburgerBtn.setAttribute('aria-expanded', String(isOpen));
+        };
+
+        hamburgerBtn.addEventListener('click', function () {
+            setMenuOpen(!mobileMenu.classList.contains('open'));
+        });
+
+        // Isara kapag pinindot ang link o ang labas ng menu
+        mobileMenu.addEventListener('click', function (e) {
+            if (e.target.closest('a') || e.target === mobileMenu) {
+                setMenuOpen(false);
+            }
+        });
+
+        // Isara gamit ang Escape key
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                setMenuOpen(false);
+            }
+        });
+
+        // Isara kapag lumaki na ang screen (desktop)
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 768) {
+                setMenuOpen(false);
+            }
+        });
+    }
+
+    // ==================================================
+    // INVENTORY (table + summary cards)
+    // ==================================================
+
+    function qtyOf(item) {
+        var n = Number(item.quantity !== undefined ? item.quantity : item.stock);
+        return isNaN(n) ? 0 : n;
+    }
+
+    // Ginagamit pa rin para sa Low Stock / Out of Stock status (hindi na ipinapakita sa table)
+    function lowLevelOf(item) {
+        var n = Number(
+            item.minStock !== undefined ? item.minStock :
+            item.lowStockLevel !== undefined ? item.lowStockLevel :
+            item.reorderLevel
+        );
+
+        return isNaN(n) ? DEFAULT_LOW_LEVEL : n;
+    }
+
+    // Returns: 'out' | 'low' | 'in'
+    function stockKeyOf(item) {
+        var qty = qtyOf(item);
+
+        if (qty <= 0) {
+            return 'out';
+        }
+
+        if (qty <= lowLevelOf(item)) {
+            return 'low';
+        }
+
+        return 'in';
+    }
+
+    var STOCK_LABELS = {
+        in: 'In Stock',
+        low: 'Low Stock',
+        out: 'Out of Stock'
+    };
+
+    function renderInventoryTable(list) {
+        if (!inventoryTable) {
+            return;
+        }
+
+        if (noInventory) {
+            noInventory.style.display = list.length ? 'none' : 'block';
+        }
+
+        inventoryTable.innerHTML = list.map(function (item) {
+            var key = stockKeyOf(item);
+
+            var name = item.name || item.itemName || item.item || '';
+            var category = item.category || '';
+
+            return '<tr>' +
+                '<td>' + escapeHtml(name) + '</td>' +
+                '<td>' + escapeHtml(category) + '</td>' +
+                '<td>' + qtyOf(item) + '</td>' +
+                '<td><span class="stock-badge stock-' + key + '">' +
+                    STOCK_LABELS[key] + '</span></td>' +
+            '</tr>';
+        }).join('');
+    }
+
+    function renderInventory(items) {
+        var list = items || [];
+        var inStock = 0;
+        var low = 0;
+        var out = 0;
+
+        list.forEach(function (item) {
+            var key = stockKeyOf(item);
+
+            if (key === 'out') {
+                out++;
+            } else if (key === 'low') {
+                low++;
+            } else {
+                inStock++;
+            }
+        });
+
+        setCard('total', list.length);
+        setCard('inStock', inStock);
+        setCard('low', low);
+        setCard('out', out);
+
+        renderInventoryTable(list);
+    }
+
+    function loadInventory() {
+        return request(INVENTORY_URL)
+            .then(function (data) {
+                if (!data) {
+                    return;
+                }
+
+                if (data.success === false) {
+                    console.error('Inventory error:', data.message);
+                    return;
+                }
+
+                // Tanggap: { items: [] } , { inventory: [] } o plain array
+                var items = Array.isArray(data)
+                    ? data
+                    : (data.items || data.inventory || []);
+
+                console.log('Inventory loaded:', items.length, 'items');
+
+                renderInventory(items);
+            })
+            .catch(function (error) {
+                console.error('Error loading inventory:', error);
+            });
     }
 
     // ==================================================
@@ -327,6 +520,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 renderAll();
 
                 if (status === 'Completed') {
+                    // Nabawasan na ang stock sa server -> i-refresh ang inventory table at cards
+                    loadInventory();
+                    // I-refresh din ang Pending/Completed counts
+                    load();
+
                     document.dispatchEvent(new CustomEvent('appointment:completed', {
                         detail: { appointmentId: id }
                     }));
@@ -392,6 +590,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 renderSummary(data.summary);
                 renderClients();
                 renderAll();
+
+                // Kung kasama na sa reports response ang inventory, gamitin agad
+                if (Array.isArray(data.inventory) || Array.isArray(data.items)) {
+                    renderInventory(data.inventory || data.items);
+                }
             })
             .catch(function (error) {
                 console.error('Error loading reports:', error);
@@ -425,7 +628,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var refreshBtn = document.getElementById('refreshBtn');
 
     if (refreshBtn) {
-        refreshBtn.addEventListener('click', load);
+        refreshBtn.addEventListener('click', function () {
+            load();
+            loadInventory();
+        });
     }
 
     var printBtn = document.getElementById('printBtn');
@@ -473,4 +679,5 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==================================================
 
     load();
+    loadInventory();
 });

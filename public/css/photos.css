@@ -10,6 +10,7 @@ body {
     width: 100%;
     min-height: 100%;
     overflow-x: hidden;
+    overflow-x: clip;   /* para gumana ang sticky navbar sa mobile */
 }
 
 body {
@@ -99,6 +100,34 @@ body::before {
 .nav-links a.active {
     background: #e63946;
 }
+
+/* ===== HAMBURGER BUTTON (nakatago sa desktop) ===== */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 46px;
+    height: 46px;
+    padding: 10px;
+    background: #fff;
+    border: 2px solid #111;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.hamburger span {
+    display: block;
+    width: 100%;
+    height: 3px;
+    border-radius: 2px;
+    background: #111;
+    transition: transform 0.3s, opacity 0.3s;
+}
+
+.hamburger.open span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
 
 .client {
     display: flex;
@@ -300,9 +329,146 @@ body::before {
     }
 }
 
+/* ======================================================
+   MOBILE: HAMBURGER + DARK SIDE DRAWER
+   ====================================================== */
+
+@media (max-width: 768px) {
+
+    /* Ibalik ang navbar sa isang row (override ng 900px rule) */
+    .navbar {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        min-height: 70px;
+        padding: 0 16px;
+        flex-direction: row;
+        gap: 0;
+        border-bottom: 3px solid #e63946;
+    }
+
+    .logo { font-size: 17px; }
+
+    /* Hamburger / X button: puting box, nasa ibaba ng navbar sa right */
+    .hamburger {
+        display: flex;
+        position: absolute;
+        top: calc(100% + 13px);
+        right: 14px;
+        z-index: 1002;              /* laging nasa ibabaw ng drawer */
+    }
+
+    /* ===== FULL-HEIGHT SIDE DRAWER ===== */
+    .nav-links {
+        position: fixed;
+        top: 73px;                  /* 70px navbar + 3px border */
+        right: 0;
+        bottom: 0;
+        left: auto;
+        width: 70vw;
+        max-width: 320px;
+        flex: none;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: flex-end;      /* right-aligned ang links */
+        justify-content: flex-start;
+        gap: 14px;                  /* pagitan ng mga boxed button */
+        padding: 80px 20px 30px;    /* space para hindi matakpan ng X button */
+        background: #111;
+        border-left: 3px solid #e63946;
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.35);
+        overflow-y: auto;
+        z-index: 1000;
+
+        /* slide galing sa kanan */
+        transform: translateX(100%);
+        visibility: hidden;
+        transition: transform 0.35s ease, visibility 0.35s;
+    }
+
+    .nav-links.open {
+        transform: translateX(0);
+        visibility: visible;
+    }
+
+    .nav-links li {
+        display: block;
+        width: 100%;
+    }
+
+    /* ===== Menu buttons (boxed) ===== */
+    .nav-links a {
+        display: block;
+        width: 100%;
+        padding: 14px 18px;
+        text-align: right;
+        font-size: 1.1rem;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        color: #fff;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+        -webkit-tap-highlight-color: transparent;
+
+        /* blur-to-sharp entrance */
+        opacity: 0;
+        filter: blur(8px);
+        transform: translateX(16px);
+        transition:
+            opacity 0.7s ease,
+            filter 0.7s ease,
+            transform 0.7s ease,
+            color 0.25s ease,
+            background-color 0.25s ease,
+            border-color 0.25s ease,
+            box-shadow 0.25s ease;
+    }
+
+    .nav-links.open a {
+        opacity: 1;
+        filter: blur(0);
+        transform: translateX(0);
+    }
+
+    .nav-links.open li:nth-child(1) a { transition-delay: 0.05s; }
+    .nav-links.open li:nth-child(2) a { transition-delay: 0.12s; }
+    .nav-links.open li:nth-child(3) a { transition-delay: 0.19s; }
+    .nav-links.open li:nth-child(4) a { transition-delay: 0.26s; }
+    .nav-links.open li:nth-child(5) a { transition-delay: 0.33s; }
+    .nav-links.open li:nth-child(6) a { transition-delay: 0.40s; }
+
+    /* Active page: red na box */
+    .nav-links a.active {
+        color: #e63946;
+        background: rgba(230, 57, 70, 0.12);
+        border-color: #e63946;
+    }
+
+    /* Hover (desktop/tablet) at press (touch)
+       (li a para mas malakas kaysa sa delay rules sa taas) */
+    .nav-links.open li a:hover,
+    .nav-links.open li a:active,
+    .nav-links.open li a:focus-visible {
+        color: #e63946;
+        background: rgba(230, 57, 70, 0.12);
+        border-color: #e63946;
+        box-shadow: 0 6px 16px rgba(230, 57, 70, 0.25);
+        transform: translateX(-6px);
+        transition-delay: 0s;
+        outline: none;
+    }
+
+    /* Space para hindi matakpan ng hamburger ang title */
+    .container {
+        padding-top: 70px;
+    }
+}
+
 @media (max-width: 600px) {
     .container {
-        padding: 20px;
+        padding: 70px 20px 20px;
     }
 
     .page-header h1 {

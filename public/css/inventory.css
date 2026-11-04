@@ -21,7 +21,7 @@ body {
     color: white;
 }
 
-/* ===== LOGO STYLES - IDINAGDAG ===== */
+/* ===== LOGO STYLES ===== */
 .logo {
     display: flex;
     align-items: center;
@@ -325,8 +325,6 @@ tr:hover {
     font-size: 14px;
 }
 
-/* ===== ITO ANG BAGONG BINAGO ===== */
-/* Para sa lahat ng input at select sa form */
 .form-group input,
 .form-group select {
     width: 100%;
@@ -338,7 +336,6 @@ tr:hover {
     box-sizing: border-box;
 }
 
-/* Para sa textarea (kung meron) */
 .form-group textarea {
     width: 100%;
     min-height: 42px;
@@ -350,7 +347,6 @@ tr:hover {
     resize: vertical;
 }
 
-/* Pantayin ang mga input sa form-row */
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -379,7 +375,6 @@ tr:hover {
     font-size: 14px;
     box-sizing: border-box;
 }
-/* ===== HANGGANG DITO ANG BAGONG BINAGO ===== */
 
 .modal-actions {
     display: flex;
@@ -415,6 +410,10 @@ tr:hover {
     background-color: #1e5f2c;
 }
 
+/* ======================================================
+   RESPONSIVE
+   ====================================================== */
+
 @media (max-width: 1200px) {
     .navbar { padding: 0 20px; }
     .inventory-summary { grid-template-columns: repeat(2, 1fr); }
@@ -442,4 +441,179 @@ tr:hover {
     .inventory-controls select {
         min-width: 100%;
     }
+}
+
+/* ======================================================
+   MOBILE HAMBURGER MENU (keep this at the very bottom)
+   ====================================================== */
+
+.hamburger,
+.mobile-menu { display: none; }
+
+@media (max-width: 768px) {
+
+    /* Navbar: simple bar with only the logo */
+    .navbar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        height: 70px;
+        padding: 0 15px;
+        flex-direction: row;
+        gap: 0;
+        overflow: visible;
+    }
+
+    .logo { font-size: 18px; gap: 8px; }
+    .logo img { height: 38px; }
+
+    .navbar .nav-links,
+    .navbar .admin-profile { display: none; }
+
+    /* Button: right side, just below the navbar */
+    .hamburger {
+        display: flex;
+        position: absolute;
+        top: 100%;
+        right: 12px;
+        margin-top: 10px;
+        width: 44px;
+        height: 44px;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        padding: 0;
+        background: #ffffff;
+        border: 2px solid #000000;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .hamburger span {
+        width: 24px;
+        height: 3px;
+        background: #000000;
+        border-radius: 2px;
+        transition: transform 0.4s ease, opacity 0.4s ease;
+    }
+
+    .hamburger.open span:nth-child(1) { transform: translateY(9px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-9px) rotate(-45deg); }
+
+    /* Invisible full-screen layer (tap outside to close). No background blur. */
+    .mobile-menu {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 99;
+        background: transparent;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.5s ease, visibility 0s linear 0.5s;
+    }
+
+    .mobile-menu.open {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transition: opacity 0.5s ease, visibility 0s;
+    }
+
+        /* ===== Menu buttons (boxed) ===== */
+    .mobile-menu ul {
+        gap: 14px;                 /* mas siksik kasi may box na */
+    }
+
+    .mobile-menu li {
+        width: 100%;
+    }
+
+    .mobile-menu a {
+        display: block;
+        width: 100%;
+        padding: 14px 18px;
+        text-align: right;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+        -webkit-tap-highlight-color: transparent;
+        transition:
+            opacity 0.7s ease,
+            filter 0.7s ease,
+            transform 0.7s ease,
+            color 0.25s ease,
+            background-color 0.25s ease,
+            border-color 0.25s ease,
+            box-shadow 0.25s ease;
+    }
+
+    /* Hover (desktop/tablet) at press (touch) */
+    .mobile-menu.open a:hover,
+    .mobile-menu.open a:active,
+    .mobile-menu.open a:focus-visible {
+        color: var(--accent);
+        background: rgba(230, 57, 70, 0.12);
+        border-color: var(--accent);
+        box-shadow: 0 6px 16px rgba(230, 57, 70, 0.25);
+        transform: translateX(-6px);
+        transition-delay: 0s;      /* cancel yung staggered entrance delay */
+        outline: none;
+    }
+
+    /* Active page: red na box */
+    .mobile-menu a.active {
+        color: var(--accent);
+        background: rgba(230, 57, 70, 0.12);
+        border-color: var(--accent);
+    }
+
+    /* Panel in the right corner, links vertical and right-aligned */
+    .mobile-menu ul {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: min(280px, 80%);
+        height: 100%;
+        padding: 170px 24px 24px;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 20px;
+        background: rgba(13, 13, 14, 0.97);
+        border-left: 3px solid #e63946;
+    }
+
+    /* Only the letters blur, then slowly become sharp */
+    .mobile-menu a {
+        display: block;
+        color: #ffffff;
+        text-decoration: none;
+        font-size: 1.2rem;
+        opacity: 0;
+        filter: blur(10px);
+        transform: translateX(16px);
+        transition: opacity 0.7s ease, filter 0.7s ease, transform 0.7s ease;
+    }
+
+    .mobile-menu a.active { color: #e63946; }
+
+    .mobile-menu.open a {
+        opacity: 1;
+        filter: blur(0);
+        transform: translateX(0);
+    }
+
+    .mobile-menu li:nth-child(1) a { transition-delay: 0s; }
+    .mobile-menu li:nth-child(2) a { transition-delay: 0.08s; }
+    .mobile-menu li:nth-child(3) a { transition-delay: 0.16s; }
+    .mobile-menu li:nth-child(4) a { transition-delay: 0.24s; }
+    .mobile-menu li:nth-child(5) a { transition-delay: 0.32s; }
+    .mobile-menu li:nth-child(6) a { transition-delay: 0.40s; }
 }

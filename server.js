@@ -16,7 +16,7 @@ import photoRoutes from "./routes/photoRoutes.js";
 
 import User from "./models/user.js";
 import Dashboard from "./models/dashboard.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import requireRole from "./middleware/requireRole.js";
 
 dotenv.config();

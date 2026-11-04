@@ -75,7 +75,15 @@
             Totats Skin Art Tattoo
         </div>
 
-        <ul class="nav-links">
+        <!-- HAMBURGER BUTTON (lumalabas lang sa mobile) -->
+        <button class="hamburger" id="hamburger" type="button"
+                aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <ul class="nav-links" id="navLinks">
 
             <% if ((typeof role !== 'undefined' ? role : 'client') === 'admin') { %>
                 <li><a href="/dashboard">Dashboard</a></li>
@@ -216,6 +224,42 @@
 
 
     <script src="/js/photo.js"></script>
+
+    <!-- HAMBURGER TOGGLE -->
+    <script>
+        (function () {
+            var hamburger = document.getElementById('hamburger');
+            var navLinks = document.getElementById('navLinks');
+
+            if (!hamburger || !navLinks) return;
+
+            function setMenu(open) {
+                hamburger.classList.toggle('open', open);
+                navLinks.classList.toggle('open', open);
+                hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+            }
+
+            // Pindot sa hamburger / X
+            hamburger.addEventListener('click', function () {
+                setMenu(!navLinks.classList.contains('open'));
+            });
+
+            // Isara kapag may pinindot na link
+            navLinks.querySelectorAll('a').forEach(function (link) {
+                link.addEventListener('click', function () { setMenu(false); });
+            });
+
+            // Isara gamit ang Escape key
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') setMenu(false);
+            });
+
+            // Isara kapag lumapad na ang screen (desktop)
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 768) setMenu(false);
+            });
+        })();
+    </script>
 
 </body>
 </html>

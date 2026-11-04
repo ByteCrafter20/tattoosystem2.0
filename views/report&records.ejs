@@ -12,6 +12,10 @@
 
 <body>
 
+    <!-- ==================================================
+         NAVBAR - ISANG <nav> lang. Nasa loob ang logo, button at links.
+         ================================================== -->
+
     <nav class="navbar">
 
         <div class="logo">
@@ -19,42 +23,37 @@
             Totats<span> Skin Art Tattoo</span>
         </div>
 
-        <ul class="nav-links">
+        <button id="hamburgerBtn" class="hamburger" type="button"
+                aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <ul class="nav-links" id="navLinks">
 
             <li>
-                <a href="/dashboard">
-                    Dashboard
-                </a>
+                <a href="/dashboard">Dashboard</a>
             </li>
 
             <li>
-                <a href="/clientappointment">
-                    Appointment of a Client
-                </a>
+                <a href="/clientappointment">Appointment of a Client</a>
             </li>
 
             <li>
-                <a href="/inventory">
-                    Inventory
-                </a>
+                <a href="/inventory">Inventory</a>
             </li>
 
             <li>
-                <a href="/reports" class="active">
-                    Reports &amp; Records
-                </a>
+                <a href="/reports" class="active">Reports &amp; Records</a>
             </li>
 
             <li>
-                <a href="/photos">
-                    Photos Gallery
-                </a>
+                <a href="/photos">Photos Gallery</a>
             </li>
 
             <li>
-                <a href="/logout">
-                    Logout
-                </a>
+                <a href="/logout">Logout</a>
             </li>
 
         </ul>
@@ -84,58 +83,31 @@
         <section class="summary-grid">
 
             <div class="summary-card">
-
-                <div class="summary-icon">
-                    A
-                </div>
-
                 <div>
                     <span>Total Appointments</span>
                     <span id="totalAppointments">0</span>
                 </div>
-
             </div>
 
-
             <div class="summary-card">
-
-                <div class="summary-icon">
-                    C
-                </div>
-
                 <div>
                     <span>Total Clients</span>
                     <span id="totalClients">0</span>
                 </div>
-
             </div>
 
-
             <div class="summary-card">
-
-                <div class="summary-icon">
-                    P
-                </div>
-
                 <div>
                     <span>Pending</span>
                     <span id="totalPending">0</span>
                 </div>
-
             </div>
 
-
             <div class="summary-card">
-
-                <div class="summary-icon">
-                    &#10003;
-                </div>
-
                 <div>
                     <span>Completed</span>
                     <span id="totalCompleted">0</span>
                 </div>
-
             </div>
 
         </section>
@@ -150,82 +122,49 @@
             <div class="section-header">
             </div>
 
-
             <div class="summary-grid inventory-summary">
 
                 <div class="summary-card">
-
-                    <div class="summary-icon">
-                        T
-                    </div>
-
                     <div>
                         <span>Total Items</span>
                         <span id="totalItems">0</span>
                     </div>
-
                 </div>
 
-
                 <div class="summary-card">
-
-                    <div class="summary-icon">
-                        S
-                    </div>
-
                     <div>
                         <span>In Stock</span>
                         <span id="inStockItems">0</span>
                     </div>
-
                 </div>
 
-
                 <div class="summary-card">
-
-                    <div class="summary-icon">
-                        L
-                    </div>
-
                     <div>
                         <span>Low Stock</span>
                         <span id="lowStockItems">0</span>
                     </div>
-
                 </div>
 
-
                 <div class="summary-card">
-
-                    <div class="summary-icon">
-                        O
-                    </div>
-
                     <div>
                         <span>Out of Stock</span>
                         <span id="outOfStockItems">0</span>
                     </div>
-
                 </div>
 
             </div>
-
 
             <div class="table-wrapper">
 
                 <table>
 
                     <thead>
-
                         <tr>
                             <th>Item Name</th>
                             <th>Category</th>
                             <th>Quantity</th>
-                            <th>Unit</th>
-                            <th>Reorder Level</th>
                             <th>Stock Status</th>
                         </tr>
-
                     </thead>
 
                     <!-- Rows are rendered from MongoDB by /js/reportInventory.js -->
@@ -267,50 +206,26 @@
                     >
 
                     <select id="statusFilter">
-
-                        <option value="all">
-                            All Status
-                        </option>
-
-                        <option value="Pending">
-                            Pending
-                        </option>
-
-                        <option value="Confirmed">
-                            Confirmed
-                        </option>
-
-                        <option value="Rescheduled">
-                            Rescheduled
-                        </option>
-
-                        <option value="Completed">
-                            Completed
-                        </option>
-
-                        <option value="Cancelled">
-                            Cancelled
-                        </option>
-
+                        <option value="all">All Status</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Confirmed">Confirmed</option>
+                        <option value="Rescheduled">Rescheduled</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Cancelled">Cancelled</option>
                     </select>
-
 
                     <button type="button" id="exportBtn">Export CSV</button>
                     <button type="button" id="printBtn">Print</button>
 
-                    
-
                 </div>
 
             </div>
-
 
             <div class="table-wrapper">
 
                 <table>
 
                     <thead>
-
                         <tr>
                             <th>Client Name</th>
                             <th>Contact</th>
@@ -320,7 +235,6 @@
                             <th>Payment</th>
                             <th>Status</th>
                         </tr>
-
                     </thead>
 
                     <!-- Rows are rendered from MongoDB by /js/report.js -->
@@ -344,7 +258,6 @@
         <section class="client-records">
 
             <div class="section-header">
-
                 <div>
                     <h2>Client Records</h2>
 
@@ -352,7 +265,6 @@
                         Registered clients in the system.
                     </p>
                 </div>
-
             </div>
 
             <!-- Cards are rendered from MongoDB by /js/report.js -->
@@ -372,7 +284,6 @@
         <section class="client-records">
 
             <div class="section-header">
-
                 <div>
                     <h2>Reference Photos</h2>
 
@@ -380,7 +291,6 @@
                         Photos submitted or chosen by clients for their appointments.
                     </p>
                 </div>
-
             </div>
 
             <!-- Rendered from MongoDB by /js/report.js -->
@@ -403,7 +313,7 @@
 
         <div class="image-modal-content">
 
-            <button type="button" id="closeImageModal" class="image-modal-close">
+            <button type="button" id="closeImageModal"  class="image-modal-close">
                 &times;
             </button>
 
@@ -414,9 +324,9 @@
     </div>
 
 
-    <!-- Isang script lang - walang inline loadReports() para walang away -->
     <script src="/js/report.js"></script>
     <script src="/js/reportInventory.js"></script>
+    <script src="/js/hamburger.js"></script>
 
 </body>
 </html>

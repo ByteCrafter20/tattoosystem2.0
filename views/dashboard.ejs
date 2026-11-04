@@ -24,7 +24,25 @@
             <li><a href="/photos">Photos gallery</a></li>
             <li><a href="/logout">Logout</a></li>
         </ul>
+
+        <!-- Mobile hamburger (below the navbar, right side) -->
+        <button id="hamburgerBtn" class="hamburger" type="button"
+                aria-label="Toggle menu" aria-expanded="false" aria-controls="mobileMenu">
+            <span></span><span></span><span></span>
+        </button>
     </nav>
+
+    <!-- Mobile menu overlay (vertical links) -->
+    <div id="mobileMenu" class="mobile-menu">
+        <ul>
+            <li><a href="#" class="active">Dashboard</a></li>
+            <li><a href="/clientappointment">Appointment of an Client</a></li>
+            <li><a href="/inventory">Inventory</a></li>
+            <li><a href="/reports">Reports &amp; Records</a></li>
+            <li><a href="/photos">Photos gallery</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </div>
 
     <main class="dashboard-main">
 
@@ -69,10 +87,7 @@
             }
         %>
 
-        <!-- ==================================================
-             PAGE HEADER
-             ================================================== -->
-
+        <!-- PAGE HEADER -->
         <header class="page-header">
             <div class="page-heading">
                 <h1>Dashboard Overview</h1>
@@ -88,10 +103,7 @@
 
             <div class="dashboard-column">
 
-                <!-- ==================================================
-                     OVERVIEW CARDS
-                     ================================================== -->
-
+                <!-- OVERVIEW CARDS -->
                 <section class="dashboard-overview">
 
                     <div class="overview-card">
@@ -120,10 +132,7 @@
 
                 </section>
 
-                <!-- ==================================================
-                     BOOKING INSIGHTS CHART
-                     ================================================== -->
-
+                <!-- BOOKING INSIGHTS CHART -->
                 <section class="panel booking-insights">
                     <div class="panel-header">
                         <h2>Booking Insights</h2>
@@ -166,10 +175,7 @@
 
             <div class="dashboard-column">
 
-                <!-- ==================================================
-                     NEW BOOKINGS FEED
-                     ================================================== -->
-
+                <!-- NEW BOOKINGS FEED -->
                 <section class="panel">
                     <div class="panel-header">
                         <h2>New Bookings Feed</h2>
@@ -204,10 +210,7 @@
                     </table>
                 </section>
 
-                <!-- ==================================================
-                     UPCOMING APPOINTMENTS
-                     ================================================== -->
-
+                <!-- UPCOMING APPOINTMENTS -->
                 <section class="panel">
                     <div class="panel-header">
                         <h2>Upcoming Appointments</h2>
@@ -235,29 +238,23 @@
 
         </div>
 
-        <!-- ================================================== 
-             TATTOO GALLERY (ALL EXISTING IMAGES PRESERVED)
-             ================================================== -->
-
+        <!-- TATTOO GALLERY -->
         <section class="tattoo-gallery">
-    
+
             <h2 class="section-title">Recent Tattoo Works</h2>
-    
+
             <div class="gallery-grid">
-    
-                <!-- NECK -->
+
                 <figure class="gallery-item">
                     <img src="/images/Necktattoo.jpg" alt="Neck tattoo" loading="lazy">
                     <figcaption>Neck Tattoo</figcaption>
                 </figure>
-    
-                <!-- CHEST -->
+
                 <figure class="gallery-item">
                     <img src="/images/ChestTattoo.jpg" alt="Chest tattoo" loading="lazy">
                     <figcaption>Chest Tattoo</figcaption>
                 </figure>
-    
-                <!-- SHOULDER -->
+
                 <figure class="gallery-item">
                     <img src="/images/Shoulder%20Half%20Sleeve.jpg" alt="Shoulder tattoo" loading="lazy">
                     <figcaption>Shoulder Tattoo</figcaption>
@@ -267,32 +264,29 @@
                     <img src="/images/ShouldertoNeckTattoo.jpg" alt="Shoulder tattoo" loading="lazy">
                     <figcaption>Shoulder to Neck Tattoo</figcaption>
                 </figure>
-    
-                <!-- FULL SLEEVE -->
+
                 <figure class="gallery-item">
                     <img src="/images/ForearmFullSleeve.jpg" alt="Full sleeve tattoo" loading="lazy">
                     <figcaption>Full Sleeve</figcaption>
                 </figure>
-    
-                <!-- HALF SLEEVE -->
+
                 <figure class="gallery-item">
                     <img src="/images/HalfSleeveTattoo.jpg" alt="Half sleeve tattoo" loading="lazy">
                     <figcaption>Half Sleeve</figcaption>
                 </figure>
-    
-                <!-- INNER ARM -->
+
                 <figure class="gallery-item">
                     <img src="/images/Forearmtattoo.jpg" alt="Inner arm tattoo" loading="lazy">
                     <figcaption>Inner Arm</figcaption>
                 </figure>
-    
+
                 <!-- FOREARM -->
                 <figure class="gallery-item">
                     <img id="tattooImage" src="/images/ForearmFullSleeve.jpg" alt="Forearm">
                     <figcaption>
                         Fore Arm
                         <br>
-                        <span class="category-choices"> 
+                        <span class="category-choices">
                             Category: <select id="categorySelect" onchange="changeImage()">
                                 <option value="ForearmFullSleeve">Full Sleeve</option>
                                 <option value="ForearmHalfSleeve">Half Sleeve</option>
@@ -302,56 +296,49 @@
                         </span>
                     </figcaption>
                 </figure>
-    
-                <!-- WRIST -->
+
                 <figure class="gallery-item">
                     <img src="/images/Wristtattoo.jpg" alt="Wrist tattoo" loading="lazy">
                     <figcaption>Wrist Tattoo</figcaption>
                 </figure>
-    
-                <!-- FULL BACK -->
+
                 <figure class="gallery-item">
                     <img src="/images/Fullbacktattoo.jpg" alt="Full back tattoo" loading="lazy">
                     <figcaption>Full Back</figcaption>
                 </figure>
-    
-                <!-- HALF BACK -->
+
                 <figure class="gallery-item">
                     <img src="/images/HalfBackTattoo.jpg" alt="Half back tattoo" loading="lazy">
                     <figcaption>Half Back</figcaption>
                 </figure>
-    
-                <!-- SPINE -->
+
                 <figure class="gallery-item">
                     <img src="/images/SpineTattoo.jpg" alt="Spine tattoo" loading="lazy">
                     <figcaption>Spine Tattoo</figcaption>
                 </figure>
-    
-                <!-- LOWER BACK -->
+
                 <figure class="gallery-item">
                     <img src="/images/LowerBack%20Tattoo.jpg" alt="Lower back tattoo" loading="lazy">
                     <figcaption>Lower Back</figcaption>
                 </figure>
-    
-                <!-- RIBCAGE -->
+
                 <figure class="gallery-item">
                     <img src="/images/LowerBack%20Tattoo.jpg" alt="Rib cage tattoo" loading="lazy">
                     <figcaption>Rib Cage Tattoo</figcaption>
                 </figure>
-    
-                <!-- ARMBAND -->
+
                 <figure class="gallery-item">
                     <img src="/images/ArmbandTattoo.jpg" alt="Armband tattoo" loading="lazy">
                     <figcaption>Armband Tattoo</figcaption>
                 </figure>
-                
+
                 <!-- MINIMALIST -->
                 <figure class="gallery-item">
                     <img id="minimalistImage" src="/images/MinimalistLetterTattoo.jpg" alt="Minimalist Tattoo">
                     <figcaption>
                         Minimalist
                         <br>
-                        <span class="category-choices"> 
+                        <span class="category-choices">
                             Category: <select id="minimalistSelect" onchange="changeMinimalistImage()">
                                 <option value="MinimalistLetterTattoo.jpg">Minimalist Letter Tattoo</option>
                                 <option value="MinimalistneckTattoo.jpg">Minimalist Cross Tattoo</option>
@@ -368,7 +355,7 @@
                     <figcaption>
                         Legs
                         <br>
-                        <span class="category-choices"> 
+                        <span class="category-choices">
                             Category: <select id="legsSelect" onchange="changeLegsImage()">
                                 <option value="LegsTattoo.jpg">Leg Dragon Tattoo</option>
                                 <option value="LegsTattoo2.jpg">Face with Roses Tattoo Leg</option>
@@ -376,26 +363,24 @@
                         </span>
                     </figcaption>
                 </figure>
-                
-                <!-- LOWER LEGS -->
+
                 <figure class="gallery-item">
                     <img src="/images/LowerLegTattoo.jpg" alt="Lower legs tattoo" loading="lazy">
                     <figcaption>Lower Legs</figcaption>
                 </figure>
-    
-                <!-- ANKLE -->
+
                 <figure class="gallery-item">
                     <img src="/images/LowerLegTattoo.jpg" alt="Ankle tattoo" loading="lazy">
                     <figcaption>Ankle Tattoo</figcaption>
                 </figure>
-    
+
                 <!-- BACK PIECE -->
                 <figure class="gallery-item">
                     <img id="backPieceImage" src="/images/Fullbacktattoo.jpg" alt="Back Piece">
                     <figcaption>
                         Back Piece
                         <br>
-                        <span class="category-choices"> 
+                        <span class="category-choices">
                             Category: <select id="backPieceSelect" onchange="changeBackPieceImage()">
                                 <option value="Fullbacktattoo">Full Back</option>
                                 <option value="SpineTattoo">Spine Tattoo</option>
@@ -406,7 +391,7 @@
                         </span>
                     </figcaption>
                 </figure>
-    
+
             </div>
         </section>
     </main>

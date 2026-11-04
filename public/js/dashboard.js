@@ -172,8 +172,8 @@
     var DATE_KEYS = ['date', 'appointmentDate', 'bookingDate', 'preferredDate', 'scheduledDate', 'createdAt'];
     var TIME_KEYS = ['time', 'appointmentTime', 'timeSlot'];
 
-    // Fills BOTH the "New Bookings Feed" table and the "Upcoming Appointments" box
-    // Needs in your EJS:
+    // Fills the "New Bookings Feed" table and the "Upcoming Appointments" box
+    // when these exist in the EJS:
     //   <tbody id="newBookingsBody"></tbody>
     //   <div id="upcomingList"></div>
     function renderUpcoming(rows) {
@@ -187,7 +187,6 @@
             return a.status !== 'Cancelled';
         });
 
-        // Upcoming = today or later (invalid dates are kept, not dropped)
         var upcoming = active.filter(function (a) {
             var d = new Date(pick(a, DATE_KEYS, ''));
             return isNaN(d.getTime()) || d >= today;
@@ -196,7 +195,6 @@
                    new Date(pick(b, DATE_KEYS, 0));
         }).slice(0, 5);
 
-        // New Bookings Feed: newest created first, regardless of date
         var newest = active.slice().sort(function (a, b) {
             return new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date);
         }).slice(0, 5);
@@ -255,7 +253,38 @@
         });
     }
 
+    // ---------- Hamburger menu (markup lives in dashboard.ejs) ----------
+    function initHamburger() {
+        var btn = document.getElementById('hamburgerBtn');
+        var overlay = document.getElementById('mobileMenu');
+        if (!btn || !overlay) return;
+
+        function setOpen(isOpen) {
+            btn.classList.toggle('open', isOpen);
+            overlay.classList.toggle('open', isOpen);
+            btn.setAttribute('aria-expanded', String(isOpen));
+        }
+
+        btn.addEventListener('click', function () {
+            setOpen(!overlay.classList.contains('open'));
+        });
+
+        overlay.addEventListener('click', function (e) {
+            if (e.target.closest('a') || e.target === overlay) setOpen(false);
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') setOpen(false);
+        });
+
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 768) setOpen(false);
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
+
+        initHamburger();
 
         if (document.getElementById('totalAppointments')) {
             refreshDashboard();

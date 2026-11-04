@@ -2,7 +2,7 @@
    Dashboard - Totats Skin Art Tattoo
    ====================================================== */
 
-   :root {
+:root {
     --ink: #111111;
     --accent: #e63946;
     --accent-dark: #c92f3b;
@@ -905,4 +905,171 @@ td img,
     .gallery-item img {
         height: 180px;
     }
+}
+
+/* ======================================================
+   MOBILE HAMBURGER MENU
+   ====================================================== */
+
+.hamburger,
+.mobile-menu {
+    display: none;
+}
+
+@media (max-width: 768px) {
+
+    .navbar {
+        position: relative;
+    }
+
+    .navbar .nav-links {
+        display: none;
+    }
+
+    /* Button: right side, just below the navbar */
+    .hamburger {
+        display: flex;
+        position: absolute;
+        top: 100%;
+        right: 12px;
+        margin-top: 10px;
+        width: 44px;
+        height: 44px;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        padding: 0;
+        background: #ffffff;
+        border: 2px solid #000000;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .hamburger span {
+        width: 24px;
+        height: 3px;
+        background: #000000;
+        border-radius: 2px;
+        transition: transform 0.4s ease, opacity 0.4s ease;
+    }
+
+    .hamburger.open span:nth-child(1) { transform: translateY(9px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-9px) rotate(-45deg); }
+
+    /* Full-screen invisible layer (tap outside to close). No blur here. */
+    .mobile-menu {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 99;               /* below the navbar (z-index 100) so the button stays clickable */
+        background: transparent;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.5s ease, visibility 0s linear 0.5s;
+    }
+
+    .mobile-menu.open {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transition: opacity 0.5s ease, visibility 0s;
+    }
+
+    /* Panel in the right corner, links vertical and right-aligned */
+    .mobile-menu ul {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: min(280px, 80%);
+        height: 100%;
+        padding: 170px 24px 24px;  /* pushes links below the hamburger button */
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 20px;
+        background: rgba(13, 13, 14, 0.97);
+        border-left: 3px solid var(--accent);
+    }
+
+    /* Only the letters blur, then become sharp */
+    .mobile-menu a {
+        color: #ffffff;
+        text-decoration: none;
+        font-size: 1.2rem;
+        opacity: 0;
+        filter: blur(10px);
+        transform: translateX(16px);
+        transition: opacity 0.7s ease, filter 0.7s ease, transform 0.7s ease;
+    }
+
+    .mobile-menu a.active {
+        color: var(--accent);
+    }
+
+        /* ===== Menu buttons (boxed) ===== */
+    .mobile-menu ul {
+        gap: 14px;                 /* mas siksik kasi may box na */
+    }
+
+    .mobile-menu li {
+        width: 100%;
+    }
+
+    .mobile-menu a {
+        display: block;
+        width: 100%;
+        padding: 14px 18px;
+        text-align: right;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+        -webkit-tap-highlight-color: transparent;
+        transition:
+            opacity 0.7s ease,
+            filter 0.7s ease,
+            transform 0.7s ease,
+            color 0.25s ease,
+            background-color 0.25s ease,
+            border-color 0.25s ease,
+            box-shadow 0.25s ease;
+    }
+
+    /* Hover (desktop/tablet) at press (touch) */
+    .mobile-menu.open a:hover,
+    .mobile-menu.open a:active,
+    .mobile-menu.open a:focus-visible {
+        color: var(--accent);
+        background: rgba(230, 57, 70, 0.12);
+        border-color: var(--accent);
+        box-shadow: 0 6px 16px rgba(230, 57, 70, 0.25);
+        transform: translateX(-6px);
+        transition-delay: 0s;      /* cancel yung staggered entrance delay */
+        outline: none;
+    }
+
+    /* Active page: red na box */
+    .mobile-menu a.active {
+        color: var(--accent);
+        background: rgba(230, 57, 70, 0.12);
+        border-color: var(--accent);
+    }
+
+    .mobile-menu.open a {
+        opacity: 1;
+        filter: blur(0);
+        transform: translateX(0);
+    }
+
+    .mobile-menu li:nth-child(2) a { transition-delay: 0.08s; }
+    .mobile-menu li:nth-child(3) a { transition-delay: 0.16s; }
+    .mobile-menu li:nth-child(4) a { transition-delay: 0.24s; }
+    .mobile-menu li:nth-child(5) a { transition-delay: 0.32s; }
+    .mobile-menu li:nth-child(6) a { transition-delay: 0.40s; }
 }
