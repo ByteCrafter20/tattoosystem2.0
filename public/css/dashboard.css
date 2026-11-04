@@ -918,8 +918,24 @@ td img,
 
 @media (max-width: 768px) {
 
+    /* Navbar: pareho sa ibang pages (isang row, logo sa kaliwa, sticky) */
     .navbar {
-        position: relative;
+        position: sticky;
+        top: 0;
+        height: 70px;
+        padding: 0 16px;
+        flex-direction: row;
+        gap: 0;
+    }
+
+    /* Logo: pareho ang laki sa ibang pages */
+    .logo {
+        gap: 12px;
+        font-size: 17px;
+    }
+
+    .logo img {
+        height: 45px;
     }
 
     .navbar .nav-links {

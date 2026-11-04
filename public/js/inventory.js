@@ -23,12 +23,12 @@ var ITEMS_BY_CATEGORY = {
         'Power Supply', 'Foot Pedal', 'Clip Cord'
     ],
     Accessories: [
-        'Disposable Grip', 'Stainless Grip', 'Cartridge Tube',
+        'Disposable Grip', 'Cartridge Tube',
         'Ink Cups', 'Rubber Bands', 'Stencil Paper', 'Stencil Gel'
     ],
     Sanitation: [
-        'Plastic Gloves', 'Ointment', 'Green Soap', 'Alcohol',
-        'Cling Wrap', 'Second Skin', 'Gauze', 'Paper Towel', 'Barrier Film'
+        'Plastic Gloves', 'Ointment','Foam Wash', 'Alcohol',
+        'Cling Wrap', 'Tissue','Baby Wipes'
     ],
     Other: []
 };
@@ -431,6 +431,24 @@ document.addEventListener('DOMContentLoaded', function () {
             closeInventoryModal();
         }
     });
+
+    // Logo (Totats Skin Art Tattoo) = pindutin para pumunta sa Dashboard
+    var logo = document.querySelector('.logo');
+
+    if (logo) {
+        logo.setAttribute('role', 'link');
+        logo.setAttribute('tabindex', '0');
+
+        logo.addEventListener('click', function () {
+            window.location.href = '/dashboard';
+        });
+
+        logo.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                window.location.href = '/dashboard';
+            }
+        });
+    }
 
     populateItemNames();
     loadInventory();

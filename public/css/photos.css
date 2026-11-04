@@ -358,37 +358,60 @@ body::before {
         z-index: 1002;              /* laging nasa ibabaw ng drawer */
     }
 
-    /* ===== FULL-HEIGHT SIDE DRAWER ===== */
+    /* ===== FULL-SCREEN OVERLAY (ito ang menu) =====
+       Pag pinindot ang labas ng drawer, ang .nav-links mismo ang tatamaan
+       kaya sumasara ang menu (e.target === menu sa JS). */
     .nav-links {
+        --drawer-w: min(70vw, 320px);
+
         position: fixed;
         top: 73px;                  /* 70px navbar + 3px border */
         right: 0;
         bottom: 0;
-        left: auto;
-        width: 70vw;
-        max-width: 320px;
+        left: 0;
+        width: 100%;
+        max-width: none;
         flex: none;
         flex-direction: column;
         flex-wrap: nowrap;
         align-items: flex-end;      /* right-aligned ang links */
         justify-content: flex-start;
-        gap: 14px;                  /* pagitan ng mga boxed button */
-        padding: 80px 20px 30px;    /* space para hindi matakpan ng X button */
-        background: #111;
-        border-left: 3px solid #e63946;
-        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.35);
+        gap: 14px;
+        /* itulak ang mga link papasok sa loob ng drawer */
+        padding: 80px 20px 30px calc(100% - var(--drawer-w) + 20px);
+        background: rgba(0, 0, 0, 0.45);   /* dim */
         overflow-y: auto;
         z-index: 1000;
 
-        /* slide galing sa kanan */
-        transform: translateX(100%);
+        /* fade ang overlay */
+        opacity: 0;
         visibility: hidden;
-        transition: transform 0.35s ease, visibility 0.35s;
+        transition: opacity 0.35s ease, visibility 0.35s;
     }
 
     .nav-links.open {
-        transform: translateX(0);
+        opacity: 1;
         visibility: visible;
+    }
+
+    /* ===== ANG ITIM NA DRAWER PANEL (nasa kanan) ===== */
+    .nav-links::before {
+        content: "";
+        position: fixed;
+        top: 73px;
+        right: 0;
+        bottom: 0;
+        width: var(--drawer-w);
+        background: #111;
+        border-left: 3px solid #e63946;
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.35);
+        z-index: -1;                /* nasa ilalim ng mga link */
+        transform: translateX(100%);
+        transition: transform 0.35s ease;
+    }
+
+    .nav-links.open::before {
+        transform: translateX(0);
     }
 
     .nav-links li {
