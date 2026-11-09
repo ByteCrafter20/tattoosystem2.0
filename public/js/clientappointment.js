@@ -1052,6 +1052,27 @@ document.addEventListener('DOMContentLoaded', function () {
     if (sizeFilter) { sizeFilter.addEventListener('change', render); }
 
     // ==================================================
+    // LOGO - pindutin ang "Totats Skin Art Tattoo" para pumunta sa Dashboard
+    // ==================================================
+
+    var logo = document.querySelector('.logo');
+
+    if (logo) {
+        logo.setAttribute('role', 'link');
+        logo.setAttribute('tabindex', '0');
+
+        logo.addEventListener('click', function () {
+            window.location.href = '/dashboard';
+        });
+
+        logo.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                window.location.href = '/dashboard';
+            }
+        });
+    }
+
+    // ==================================================
     // INIT
     // ==================================================
 

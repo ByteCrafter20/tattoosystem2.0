@@ -922,11 +922,32 @@ td img,
 
 @media (max-width: 768px) {
 
+<<<<<<< HEAD
     /* FIX: dating "relative" - ginawang sticky */
     .navbar {
         position: -webkit-sticky;
         position: sticky;
         top: 0;
+=======
+    /* Navbar: pareho sa ibang pages (isang row, logo sa kaliwa, sticky) */
+    .navbar {
+        position: sticky;
+        top: 0;
+        height: 70px;
+        padding: 0 16px;
+        flex-direction: row;
+        gap: 0;
+    }
+
+    /* Logo: pareho ang laki sa ibang pages */
+    .logo {
+        gap: 12px;
+        font-size: 17px;
+    }
+
+    .logo img {
+        height: 45px;
+>>>>>>> f0f2242d6e770d212718ceacb8d844566c665ab8
     }
 
     .navbar .nav-links {

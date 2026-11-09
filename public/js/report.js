@@ -176,18 +176,34 @@ document.addEventListener('DOMContentLoaded', function () {
         var setMenuOpen = function (isOpen) {
             hamburgerBtn.classList.toggle('open', isOpen);
             mobileMenu.classList.toggle('open', isOpen);
+            document.body.classList.toggle('menu-open', isOpen);
             hamburgerBtn.setAttribute('aria-expanded', String(isOpen));
         };
 
-        hamburgerBtn.addEventListener('click', function () {
+        hamburgerBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
             setMenuOpen(!mobileMenu.classList.contains('open'));
         });
 
-        // Isara kapag pinindot ang link o ang labas ng menu
+        // Isara kapag pinindot ang link o ang puting/madilim na area sa labas ng drawer
+        // (kailangan ang bagong CSS kung saan full-screen overlay ang #navLinks)
         mobileMenu.addEventListener('click', function (e) {
             if (e.target.closest('a') || e.target === mobileMenu) {
                 setMenuOpen(false);
             }
+        });
+
+        // Backup: kahit saan sa labas ng menu at ng hamburger = isara
+        document.addEventListener('click', function (e) {
+            if (!mobileMenu.classList.contains('open')) {
+                return;
+            }
+
+            if (mobileMenu.contains(e.target) || hamburgerBtn.contains(e.target)) {
+                return;
+            }
+
+            setMenuOpen(false);
         });
 
         // Isara gamit ang Escape key
@@ -671,6 +687,27 @@ document.addEventListener('DOMContentLoaded', function () {
             link.download = 'appointment-records.csv';
             link.click();
             URL.revokeObjectURL(link.href);
+        });
+    }
+
+    // ==================================================
+    // LOGO - pindutin ang "Totats Skin Art Tattoo" para pumunta sa Dashboard
+    // ==================================================
+
+    var logo = document.querySelector('.logo');
+
+    if (logo) {
+        logo.setAttribute('role', 'link');
+        logo.setAttribute('tabindex', '0');
+
+        logo.addEventListener('click', function () {
+            window.location.href = '/dashboard';
+        });
+
+        logo.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                window.location.href = '/dashboard';
+            }
         });
     }
 

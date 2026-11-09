@@ -1,9 +1,4 @@
 // public/js/inventory.js
-// Inventory page: loads items from /api/inventory, filtering, add modal.
-// Category <-> Item Name are linked both ways:
-//   - picking a Category filters the Item Name list
-//   - picking an Item Name auto-selects its Category
-
 var API_URL = '/api/inventory';
 var CURRENT_ITEMS = []; // keeps the last-loaded inventory, used to detect existing items
 
@@ -537,6 +532,24 @@ document.addEventListener('DOMContentLoaded', function () {
             closeInventoryModal();
         }
     });
+
+    // Logo (Totats Skin Art Tattoo) = pindutin para pumunta sa Dashboard
+    var logo = document.querySelector('.logo');
+
+    if (logo) {
+        logo.setAttribute('role', 'link');
+        logo.setAttribute('tabindex', '0');
+
+        logo.addEventListener('click', function () {
+            window.location.href = '/dashboard';
+        });
+
+        logo.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                window.location.href = '/dashboard';
+            }
+        });
+    }
 
     populateItemNames();
     loadInventory();
