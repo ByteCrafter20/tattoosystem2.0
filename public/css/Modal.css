@@ -1,0 +1,140 @@
+/* ======================================================
+   BOOK AN APPOINTMENT - dark/red 3-column modal (walang left panel)
+   Naka-scope sa #appointmentModal kaya mas malakas kaysa sa lumang
+   ".modal-content:has(.submit-btn)" rules. Kung gusto mo ng malinis,
+   burahin ang lumang "SPLIT DESIGN" block (yung may ::before/::after).
+   Ilagay ito sa DULO ng huling CSS (pagkatapos ng modal-theme.css).
+   ====================================================== */
+
+   #appointmentModal{
+    --tb-red:#e11d2e;--tb-red-d:#a50f1d;--tb-panel:#101014;--tb-field:#17171c;
+    --tb-line:#2a2a32;--tb-text:#f4f4f6;--tb-mute:#8d8d99;
+    display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center;
+    padding:16px;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);
+  }
+  #appointmentModal *{box-sizing:border-box}
+  #appointmentModal [hidden]{display:none!important}
+  
+  /* kahon */
+  #appointmentModal .modal-content{
+    position:relative;display:block;width:min(1100px,100%);max-width:1100px;height:auto;max-height:94vh;
+    padding:0;overflow:hidden;background:var(--tb-panel);color:var(--tb-text);
+    border:1.5px solid var(--tb-red);border-radius:22px;box-shadow:0 0 60px rgba(225,29,46,.18);
+  }
+  /* patayin ang lumang gradient panel kung nandoon pa */
+  #appointmentModal .modal-content::before,
+  #appointmentModal .modal-content::after{display:none!important;content:none}
+  
+  #appointmentModal .modal-main{display:flex;flex-direction:column;min-height:0;max-height:94vh}
+  
+  #appointmentModal .modal-header{
+    position:static;margin:0;padding:24px 28px 8px;background:none;border:0;border-radius:0;color:var(--tb-text);
+  }
+  #appointmentModal .modal-header h2{
+    margin:0;font-family:'Playfair Display',Georgia,serif;font-style:italic;font-weight:600;
+    font-size:34px;letter-spacing:0;color:var(--tb-text);
+  }
+  
+  #appointmentModal .close-btn{
+    position:absolute;top:14px;right:14px;z-index:2;width:38px;height:38px;padding:0;border:0;border-radius:50%;
+    background:var(--tb-red);color:#fff;font-size:22px;line-height:1;cursor:pointer;
+  }
+  #appointmentModal .close-btn:hover{background:var(--tb-red-d);color:#fff}
+  
+  /* form: 3 columns */
+  #appointmentModal #appointmentForm{
+    display:grid;grid-template-columns:1fr 1fr 1fr;padding:0;overflow-y:auto;min-height:0;
+  }
+  #appointmentModal .modal-col{display:flex;flex-direction:column;gap:14px;padding:12px 24px 24px}
+  #appointmentModal .modal-col+.modal-col{border-left:1px solid var(--tb-line)}
+  #appointmentModal h4{margin:0;font-size:15px;font-weight:800;color:var(--tb-text)}
+  
+  /* fields */
+  #appointmentModal .form-group{display:flex;flex-direction:column;gap:6px;margin:0}
+  #appointmentModal .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0}
+  #appointmentModal .form-group label,#appointmentModal .native-proxy label{
+    font-size:13px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--tb-mute);
+  }
+  #appointmentModal .form-group input,
+  #appointmentModal .form-group select,
+  #appointmentModal .form-group textarea{
+    width:100%;height:auto;padding:11px 13px;font:inherit;font-size:14px;color:var(--tb-text);
+    background-color:var(--tb-field);border:1px solid var(--tb-line);border-radius:12px;box-shadow:none;
+  }
+  #appointmentModal .form-group textarea{min-height:84px;resize:vertical}
+  #appointmentModal .form-group input:focus,
+  #appointmentModal .form-group select:focus,
+  #appointmentModal .form-group textarea:focus,
+  #appointmentModal button:focus-visible{outline:2px solid var(--tb-red);outline-offset:1px;box-shadow:none;border-color:var(--tb-line)}
+  #appointmentModal input::file-selector-button{margin-right:10px;padding:6px 10px;border:0;border-radius:8px;background:var(--tb-line);color:var(--tb-text);cursor:pointer}
+  #appointmentModal option,#appointmentModal optgroup{background:#17171c;color:#f4f4f6}
+  
+  /* totoong date/time/type fields: nasa DOM pero nakatago */
+  #appointmentModal .native-proxy{position:relative;height:0;overflow:visible}
+  #appointmentModal .native-proxy>*{position:absolute;left:0;top:-6px;width:1px;height:1px;opacity:0;pointer-events:none}
+  
+  /* style cards */
+  #appointmentModal .style-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  #appointmentModal .style-card{
+    display:flex;align-items:flex-end;height:78px;padding:9px 11px;border:1px solid var(--tb-line);border-radius:12px;
+    background:var(--g);color:var(--tb-text);font:inherit;font-weight:800;font-size:14px;text-align:left;cursor:pointer;
+  }
+  #appointmentModal .style-card small{display:block;font-weight:400;font-size:11px;color:#cfcfd6}
+  #appointmentModal .style-card[aria-pressed="true"]{border-color:var(--tb-red);box-shadow:0 0 0 2px var(--tb-red) inset}
+  #appointmentModal .style-card:last-child{grid-column:span 2;height:60px}
+  
+  /* calendar */
+  #appointmentModal .cal-nav{display:flex;align-items:center;justify-content:space-between}
+  #appointmentModal .cal-nav button{width:32px;height:32px;padding:0;border:1px solid var(--tb-line);border-radius:50%;background:var(--tb-field);color:var(--tb-text);cursor:pointer}
+  #appointmentModal .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:13px}
+  #appointmentModal .cal-dow{padding:4px 0;font-size:11px;color:var(--tb-mute)}
+  #appointmentModal .cal-day{aspect-ratio:1;padding:0;border:0;border-radius:50%;background:none;color:var(--tb-text);font:inherit;cursor:pointer}
+  #appointmentModal .cal-day:hover:not(:disabled){background:var(--tb-field)}
+  #appointmentModal .cal-day:disabled{color:#44444e;cursor:not-allowed}
+  #appointmentModal .cal-day.sel{background:var(--tb-red);font-weight:800}
+  
+  #appointmentModal .time-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  #appointmentModal .time-chip{padding:9px 0;border:1px solid var(--tb-line);border-radius:10px;background:var(--tb-field);color:var(--tb-text);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+  #appointmentModal .time-chip[aria-pressed="true"]{background:var(--tb-red);border-color:var(--tb-red)}
+  
+  /* amount + summary */
+  #appointmentModal .amount-box,
+  #appointmentModal .amount-box.balance{
+    display:flex;flex-direction:column;gap:4px;margin:0;padding:14px 16px;
+    background:var(--tb-field);border:1px solid var(--tb-line);border-left:1px solid var(--tb-line);border-radius:14px;
+  }
+  #appointmentModal .amount-label{font-size:12px;font-weight:600;color:var(--tb-mute)}
+  #appointmentModal .amount-value{font-size:26px;font-weight:800;color:#fff}
+  #appointmentModal .amount-note{font-size:12px;color:var(--tb-mute)}
+  #appointmentModal .summary{padding:4px 16px;background:var(--tb-field);border:1px solid var(--tb-line);border-radius:14px}
+  #appointmentModal .sum-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;font-size:13px;border-bottom:1px solid var(--tb-line)}
+  #appointmentModal .sum-row:last-child{border:0}
+  #appointmentModal .sum-row span{color:var(--tb-mute)}
+  #appointmentModal .sum-row b{font-weight:600;text-align:right}
+  
+  /* buttons */
+  #appointmentModal .modal-actions{display:flex;flex-direction:row;gap:10px;margin:auto 0 0;padding:0;border:0}
+  #appointmentModal .modal-actions .cancel-btn{
+    flex:0 0 auto;width:auto;padding:14px 20px;border:1px solid var(--tb-line);border-radius:999px;
+    background:transparent;color:var(--tb-text);font:inherit;font-weight:600;box-shadow:none;cursor:pointer;
+  }
+  #appointmentModal .modal-actions .cancel-btn:hover{background:transparent;color:var(--tb-red)}
+  #appointmentModal .modal-actions .submit-btn{
+    flex:1;width:auto;height:auto;padding:14px;border:0;border-radius:999px;color:#fff;font:inherit;font-weight:800;font-size:15px;
+    background:linear-gradient(180deg,var(--tb-red),var(--tb-red-d));box-shadow:none;cursor:pointer;transform:none;
+  }
+  #appointmentModal .modal-actions .submit-btn:hover{background:linear-gradient(180deg,#f02a3b,var(--tb-red-d));transform:none;box-shadow:none}
+  
+  /* tablet / mobile */
+  @media(max-width:980px){
+    #appointmentModal #appointmentForm{grid-template-columns:1fr}
+    #appointmentModal .modal-col+.modal-col{border-left:0;border-top:1px solid var(--tb-line)}
+    #appointmentModal .modal-header h2{font-size:26px}
+  }
+  @media(prefers-reduced-motion:no-preference){
+    #appointmentModal .modal-content{animation:tbPop .25s ease-out}
+    @keyframes tbPop{from{transform:translateY(12px);opacity:0}}
+  }
+
+  .style-card.locked { opacity: .45; cursor: not-allowed; }
+.style-card.locked:hover { border-color: #c0392b; }

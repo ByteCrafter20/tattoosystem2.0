@@ -13,7 +13,6 @@ import appointmentRoutes from "./routes/appointmentRoutes.js";
 import inventoryRoutes from "./routes/inventoryRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import photoRoutes from "./routes/photoRoutes.js";
-
 import User from "./models/user.js";
 import Dashboard from "./models/dashboard.js";
 import bcrypt from "bcryptjs";
@@ -35,6 +34,45 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+
+// ======================================================
+// ROLES  (NEW)
+// admin / owner  -> buong access (dashboard, users, inventory, etc.)
+// tattooartist   -> staff, may access ang dashboard
+// client         -> clientdashboard lang
+// ======================================================
+
+const ADMIN_ROLES = ["admin", "owner"];
+const STAFF_ROLES = ["admin", "owner", "tattooartist"];
+
+const isAdminRole = (role) => ADMIN_ROLES.includes(role);
+
+// FIX: dati admin lang ang napupunta sa /dashboard - kaya na-stuck sa
+// /clientdashboard ang owner at tattoo artist pagka-login.
+const homeFor = (role) => (STAFF_ROLES.includes(role) ? "/dashboard" : "/clientdashboard");
+
+// Maraming role ang pwede (page = redirect, /api = JSON error)
+function requireRoles(allowed) {
+    return (req, res, next) => {
+        const userId = req.cookies && req.cookies.userId;
+        const role = req.cookies && req.cookies.role;
+        const wantsJson = req.originalUrl.startsWith("/api/");
+
+        if (!userId || !role) {
+            return wantsJson
+                ? res.status(401).json({ success: false, message: "Not logged in." })
+                : res.redirect("/login");
+        }
+
+        if (!allowed.includes(role)) {
+            return wantsJson
+                ? res.status(403).json({ success: false, message: "You do not have access." })
+                : res.redirect(homeFor(role));
+        }
+
+        next();
+    };
+}
 
 const bookingSchema = new mongoose.Schema(
     {
@@ -128,8 +166,11 @@ async function consumeInventoryForAppointment(appointment) {
 
     const Inventory = inventoryModel();
 
+    // FIX: dati "consumePerAppointment: true" ang filter, pero walang ganoong
+    // field sa mga item (wala sa models/Inventory.js), kaya walang nababawasan.
+    // Ngayon, lahat ay nababawasan maliban sa mga naka-set na false.
     const result = await Inventory.updateMany(
-        { consumePerAppointment: true, quantity: { $gt: 0 } },
+        { consumePerAppointment: { $ne: false }, quantity: { $gt: 0 } },
         { $inc: { quantity: -1 } }
     );
 
@@ -245,10 +286,10 @@ bookingRouter.post("/:id/pay", requireLoginCookie, async (req, res) => {
         }
 
         if (String(appointment.userId) !== String(req.user.id) &&
-            req.user.role !== "admin") {
+            !isAdminRole(req.user.role)) {
             return res.status(403).json({
                 success: false,
-                message: "Hindi mo puwedeng bayaran ang appointment na ito."
+                message: "You Don't Paid This."
             });
         }
 
@@ -335,7 +376,7 @@ bookingRouter.post("/:id/pay", requireLoginCookie, async (req, res) => {
 
 bookingRouter.patch("/:id/status", requireLoginCookie, async (req, res) => {
     try {
-        if (req.user.role !== "admin") {
+        if (!isAdminRole(req.user.role)) {
             return res.status(403).json({
                 success: false,
                 message: "Admins only."
@@ -554,8 +595,6 @@ app.use("/api/appointments", bookingRouter);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/photos", photoRoutes);
 
-const homeFor = (role) => (role === "admin" ? "/dashboard" : "/clientdashboard");
-
 const initializeAdmin = async () => {
     try {
         let admin = await User.findOne({
@@ -626,6 +665,7 @@ app.get("/login", (req, res) => {
 app.get("/register", (req, res) => {
     res.render("register");
 });
+
 
 const MONTH_LABELS = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -732,7 +772,7 @@ async function buildDashboardData() {
     };
 }
 
-app.get("/dashboard", requireRole("admin"), async (req, res) => {
+app.get("/dashboard", requireRoles(STAFF_ROLES), async (req, res) => {
     try {
         res.render("dashboard", await buildDashboardData());
     } catch (error) {
@@ -741,7 +781,7 @@ app.get("/dashboard", requireRole("admin"), async (req, res) => {
     }
 });
 
-app.get("/api/dashboard/summary", requireRole("admin"), async (req, res) => {
+app.get("/api/dashboard/summary", requireRoles(STAFF_ROLES), async (req, res) => {
     try {
         const data = await buildDashboardData();
 
@@ -776,12 +816,23 @@ app.get("/aboutus", (req, res) => {
     res.render("aboutus");
 });
 
+// owner = admin-level, kaya "admin" ang ipinapasa para lumabas ang admin nav/upload
 app.get("/photos", (req, res) => {
-    res.render("photos", { role: req.cookies.role || "client" });
+    const cookieRole = req.cookies.role || "client";
+
+    res.render("photos", { role: isAdminRole(cookieRole) ? "admin" : cookieRole });
+});
+
+// NEW: User Management page (admin / owner lang)
+app.get("/users", requireRoles(ADMIN_ROLES), (req, res) => {
+    res.render("users", {
+        role: req.cookies.role,
+        userId: req.cookies.userId
+    });
 });
 
 // FxPrint page
-app.get(["/fxprint", "/fxprint.ejs"], requireRole("admin"), (req, res) => {
+app.get(["/fxprint", "/fxprint.ejs"], requireRoles(ADMIN_ROLES), (req, res) => {
     res.render("fxprint");
 });
 
@@ -793,7 +844,7 @@ app.get("/report&records", (req, res) => {
     res.render("report&records");
 });
 
-app.get('/clientappointment', requireRole("admin"), (req, res) => {
+app.get('/clientappointment', requireRoles(ADMIN_ROLES), (req, res) => {
     res.render('clientappointment');
 });
 
@@ -983,7 +1034,7 @@ app.post("/register", async function(req, res) {
 });
 
 // GET all appointments for admin
-app.get('/api/appointments/admin/all', requireRole('admin'), async (req, res) => {
+app.get('/api/appointments/admin/all', requireRoles(ADMIN_ROLES), async (req, res) => {
     try {
         const appointments = await Booking.find({}).sort({ date: -1 }).lean();
         res.json({ success: true, appointments: appointments });
@@ -1002,7 +1053,7 @@ const OPEN_IMAGE_APPS = {
     fxprint: path.normalize(process.env.FXPRINT_PATH || "C:/Program Files (x86)/FxPrint/FxPrint.exe")
 };
 
-app.post("/api/open-image", requireRole("admin"), (req, res) => {
+app.post("/api/open-image", requireRoles(ADMIN_ROLES), (req, res) => {
     const exe = OPEN_IMAGE_APPS[req.body && req.body.app];
 
     if (!exe) {
@@ -1031,21 +1082,21 @@ app.post("/api/open-image", requireRole("admin"), (req, res) => {
 
     try {
         // Added cwd to ensure portable apps load their plugins correctly
-        const child = spawn(exe, [filePath], { 
-            detached: true, 
+        const child = spawn(exe, [filePath], {
+            detached: true,
             stdio: "ignore",
-            cwd: path.dirname(exe) 
+            cwd: path.dirname(exe)
         });
 
         child.on("error", (error) => {
             console.error("Spawn failed, trying fallback exec...", error);
-            
+
             // Fallback for stubborn portable apps that refuse to launch via spawn
             exec(`start "" "${exe}" "${filePath}"`, { cwd: path.dirname(exe) });
         });
 
         child.unref();
-        
+
     } catch (err) {
         console.error("Error launching app:", err);
         // Fallback

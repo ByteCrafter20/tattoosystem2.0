@@ -2,7 +2,7 @@
    Dashboard - Totats Skin Art Tattoo
    ====================================================== */
 
-:root {
+   :root {
     --ink: #111111;
     --accent: #e63946;
     --accent-dark: #c92f3b;
@@ -55,10 +55,11 @@ body::before {
 }
 
 /* ======================================================
-   NAVBAR
+   NAVBAR (STICKY - laging nasa taas habang nag-scroll)
    ====================================================== */
 
 .navbar {
+    position: -webkit-sticky;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -844,8 +845,11 @@ td img,
 
 @media (max-width: 850px) {
 
+    /* FIX: dating "relative" - ginawang sticky para hindi mawala sa scroll */
     .navbar {
-        position: relative;
+        position: -webkit-sticky;
+        position: sticky;
+        top: 0;
         height: auto;
         padding: 18px 20px;
         flex-direction: column;
@@ -918,8 +922,11 @@ td img,
 
 @media (max-width: 768px) {
 
+    /* FIX: dating "relative" - ginawang sticky */
     .navbar {
-        position: relative;
+        position: -webkit-sticky;
+        position: sticky;
+        top: 0;
     }
 
     .navbar .nav-links {

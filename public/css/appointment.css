@@ -2,7 +2,7 @@
    Appointments - Totats Skin Art Tattoo
    ====================================================== */
 
-:root {
+   :root {
     --ink: #111111;
     --accent: #e63946;
     --accent-dark: #c92f3b;
@@ -19,7 +19,14 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html, body { width: 100%; min-height: 100%; overflow-x: hidden; }
+/* FIX: "overflow-x: hidden" sa html/body ang pumipigil sa sticky navbar.
+   Ang "clip" ay nagtatago pa rin ng sideways overflow pero hindi sinisira ang sticky. */
+html, body {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;   /* fallback para sa lumang browser */
+    overflow-x: clip;     /* ito ang gagamitin ng modern browsers */
+}
 html { scroll-behavior: smooth; }
 
 body {
@@ -31,10 +38,11 @@ body {
 }
 
 /* ======================================================
-   NAVBAR
+   NAVBAR (STICKY - laging nasa taas habang nag-scroll)
    ====================================================== */
 
 .navbar {
+    position: -webkit-sticky;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -663,8 +671,11 @@ button.payment:active { transform: translateY(1px); }
 }
 
 @media (max-width: 850px) {
+    /* FIX: dating "relative" - ginawang sticky para hindi mawala sa scroll */
     .navbar {
-        position: relative;
+        position: -webkit-sticky;
+        position: sticky;
+        top: 0;
         height: auto;
         padding: 16px 12px;
         flex-direction: column;
@@ -703,9 +714,11 @@ button.payment:active { transform: translateY(1px); }
 
 @media (max-width: 768px) {
 
-    /* Navbar: simple bar with only the logo */
+    /* Navbar: simple bar with only the logo (sticky) */
     .navbar {
+        position: -webkit-sticky;
         position: sticky;
+        top: 0;
         height: 70px;
         padding: 0 15px;
         flex-direction: row;
@@ -780,37 +793,24 @@ button.payment:active { transform: translateY(1px); }
         display: flex;
         flex-direction: column;
         align-items: flex-end;
-        gap: 20px;
+        gap: 14px;
         background: rgba(13, 13, 14, 0.97);
         border-left: 3px solid var(--accent);
-    }
-
-    /* Only the letters blur, then slowly become sharp */
-    .mobile-menu a {
-        display: block;
-        color: #ffffff;
-        text-decoration: none;
-        font-size: 1.2rem;
-        opacity: 0;
-        filter: blur(10px);
-        transform: translateX(16px);
-        transition: opacity 0.7s ease, filter 0.7s ease, transform 0.7s ease;
-    }
-
-        /* ===== Menu buttons (boxed) ===== */
-    .mobile-menu ul {
-        gap: 14px;                 /* mas siksik kasi may box na */
     }
 
     .mobile-menu li {
         width: 100%;
     }
 
+    /* ===== Menu buttons (boxed) - letters blur, then become sharp ===== */
     .mobile-menu a {
         display: block;
         width: 100%;
         padding: 14px 18px;
         text-align: right;
+        color: #ffffff;
+        text-decoration: none;
+        font-size: 1.2rem;
         font-weight: 500;
         letter-spacing: 0.3px;
         background: rgba(255, 255, 255, 0.04);
@@ -818,6 +818,9 @@ button.payment:active { transform: translateY(1px); }
         border-radius: 10px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
         -webkit-tap-highlight-color: transparent;
+        opacity: 0;
+        filter: blur(10px);
+        transform: translateX(16px);
         transition:
             opacity 0.7s ease,
             filter 0.7s ease,
@@ -827,28 +830,6 @@ button.payment:active { transform: translateY(1px); }
             border-color 0.25s ease,
             box-shadow 0.25s ease;
     }
-
-    /* Hover (desktop/tablet) at press (touch) */
-    .mobile-menu.open a:hover,
-    .mobile-menu.open a:active,
-    .mobile-menu.open a:focus-visible {
-        color: var(--accent);
-        background: rgba(230, 57, 70, 0.12);
-        border-color: var(--accent);
-        box-shadow: 0 6px 16px rgba(230, 57, 70, 0.25);
-        transform: translateX(-6px);
-        transition-delay: 0s;      /* cancel yung staggered entrance delay */
-        outline: none;
-    }
-
-    /* Active page: red na box */
-    .mobile-menu a.active {
-        color: var(--accent);
-        background: rgba(230, 57, 70, 0.12);
-        border-color: var(--accent);
-    }
-
-    .mobile-menu a.active { color: var(--accent); }
 
     .mobile-menu.open a {
         opacity: 1;
@@ -859,58 +840,27 @@ button.payment:active { transform: translateY(1px); }
     .mobile-menu li:nth-child(1) a { transition-delay: 0s; }
     .mobile-menu li:nth-child(2) a { transition-delay: 0.08s; }
     .mobile-menu li:nth-child(3) a { transition-delay: 0.16s; }
-    .mobile-menu li:nth
-  
-        /* ===== Menu buttons (boxed) ===== */
-    .mobile-menu ul {
-        gap: 14px;                 /* mas siksik kasi may box na */
-    }
-
-    .mobile-menu li {
-        width: 100%;
-    }
-
-    .mobile-menu a {
-        display: block;
-        width: 100%;
-        padding: 14px 18px;
-        text-align: right;
-        font-weight: 500;
-        letter-spacing: 0.3px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-        -webkit-tap-highlight-color: transparent;
-        transition:
-            opacity 0.7s ease,
-            filter 0.7s ease,
-            transform 0.7s ease,
-            color 0.25s ease,
-            background-color 0.25s ease,
-            border-color 0.25s ease,
-            box-shadow 0.25s ease;
-    }
-
-    /* Hover (desktop/tablet) at press (touch) */
-    .mobile-menu.open a:hover,
-    .mobile-menu.open a:active,
-    .mobile-menu.open a:focus-visible {
-        color: var(--accent);
-        background: rgba(230, 57, 70, 0.12);
-        border-color: var(--accent);
-        box-shadow: 0 6px 16px rgba(230, 57, 70, 0.25);
-        transform: translateX(-6px);
-        transition-delay: 0s;      /* cancel yung staggered entrance delay */
-        outline: none;
-    }
+    .mobile-menu li:nth-child(4) a { transition-delay: 0.24s; }
+    .mobile-menu li:nth-child(5) a { transition-delay: 0.32s; }
+    .mobile-menu li:nth-child(6) a { transition-delay: 0.40s; }
 
     /* Active page: red na box */
     .mobile-menu a.active {
         color: var(--accent);
         background: rgba(230, 57, 70, 0.12);
         border-color: var(--accent);
-    }-child(4) a { transition-delay: 0.24s; }
-    .mobile-menu li:nth-child(5) a { transition-delay: 0.32s; }
-    .mobile-menu li:nth-child(6) a { transition-delay: 0.40s; }
+    }
+
+    /* Hover (desktop/tablet) at press (touch) - nasa dulo para manalo sa delay rules */
+    .mobile-menu.open li a:hover,
+    .mobile-menu.open li a:active,
+    .mobile-menu.open li a:focus-visible {
+        color: var(--accent);
+        background: rgba(230, 57, 70, 0.12);
+        border-color: var(--accent);
+        box-shadow: 0 6px 16px rgba(230, 57, 70, 0.25);
+        transform: translateX(-6px);
+        transition-delay: 0s;
+        outline: none;
+    }
 }

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Client Dashboard</title>
     <link rel="stylesheet" href="/css/clientdashboard.css">
+    <link rel="stylesheet" href="/css/Modal.css">
 </head>
 
 <body>
@@ -84,184 +85,231 @@
 
     </main>
 
-    <!-- ===== MODAL ===== -->
+    <!-- Modal -->
+
+    <%# ===== MODAL (idikit sa dashboard .ejs) ===== %>
     <div id="appointmentModal" class="modal">
 
         <div class="modal-content">
 
-            <div class="modal-header">
-                <h2>Book an Appointment</h2>
-                <button type="button" class="close-btn" onclick="closeAppointmentModal()">&times;</button>
+            <button type="button" class="close-btn" onclick="closeAppointmentModal()" aria-label="Close">&times;</button>
+
+            <div class="modal-main">
+
+                <div class="modal-header">
+                    <h2>Book an Appointment</h2>
+                </div>
+
+                <form id="appointmentForm">
+
+                    <!-- ===== COLUMN 1: CLIENT + REFERENCE + STYLE ===== -->
+                    <div class="modal-col">
+                        <h4>Your details</h4>
+
+                        <div class="form-group">
+                            <label for="clientName">Full Name</label>
+                            <input type="text" id="clientName" name="clientName" placeholder="Enter your full name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="artist">Tattoo Artist</label>
+                            <select id="artist" name="artist"></select>
+                        </div>
+
+                        <!-- Reference photo FIRST: the file name picks the placement (e.g. fullsleeve.jpg) -->
+                        <h4>Reference photo</h4>
+                        <div class="form-group">
+                            <label for="reference">Insert reference photo (required)</label>
+                            <input type="file" id="reference" name="reference" accept="image/*">
+                            <small id="imageHint">Example: fullsleeve.jpg, forearm.jpg, fullback.jpg</small>
+                        </div>
+
+                        <h4>Choose style</h4>
+                        <div class="style-grid" id="styleGrid"></div>
+
+                        <!-- Real field (keeps your appointment.js working). Style cards fill this. -->
+                        <div class="native-proxy">
+                            <label for="tattooType">Tattoo Type</label>
+                            <select id="tattooType" name="tattooType" required>
+                                <option value="">Select Tattoo Type</option>
+                                <option value="Traditional">Traditional</option>
+                                <option value="Realism">Realism</option>
+                                <option value="Minimalist">Minimalist</option>
+                                <option value="Japanese">Japanese</option>
+                                <option value="Watercolor">Watercolor</option>
+                                <option value="Tribal">Tribal</option>
+                                <option value="Custom">Custom Design</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description">Tattoo Description</label>
+                            <textarea id="description" name="description" rows="4" placeholder="Describe your desired tattoo..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- ===== COLUMN 2: DATE + TIME + SIZE + PLACEMENT ===== -->
+                    <div class="modal-col">
+                        <h4>Select date</h4>
+
+                        <div class="cal-nav">
+                            <button type="button" id="calPrev" aria-label="Previous month">&lsaquo;</button>
+                            <strong id="calLabel"></strong>
+                            <button type="button" id="calNext" aria-label="Next month">&rsaquo;</button>
+                        </div>
+                        <div class="cal-grid" id="calGrid"></div>
+
+                        <h4>Select time</h4>
+                        <div class="time-grid" id="timeGrid"></div>
+
+                        <!-- Real fields (keep your appointment.js working). Calendar + chips fill these. -->
+                        <div class="native-proxy">
+                            <label for="date">Appointment Date</label>
+                            <input type="date" id="date" name="date" required>
+                            <label for="time">Appointment Time</label>
+                            <input type="time" id="time" name="time" required>
+                        </div>
+
+                        <!-- ===== STEP: TATTOO SIZE ===== -->
+                        <div class="form-group">
+                            <label for="tattooSize">Tattoo Size</label>
+                            <select id="tattooSize" name="tattooSize" required>
+                                <option value="">Select Tattoo Size</option>
+                                <option value="Small">Small (up to 3 in) &mdash; &#8369;700</option>
+                                <option value="Medium">Medium (up to 6 in) &mdash; &#8369;1,500</option>
+                                <option value="Large">Large (up to 12 in) &mdash; &#8369;10,000</option>
+                                <option value="Custom">Custom (priced by inches)</option>
+                            </select>
+                        </div>
+
+                        <!-- Shown only when "Custom" is selected -->
+                        <div class="form-row" id="customSizeRow" hidden>
+                            <div class="form-group">
+                                <label for="customWidth">Width (inches)</label>
+                                <input type="number" id="customWidth" name="customWidth" min="0.5" max="60" step="0.5" placeholder="e.g. 5">
+                            </div>
+                            <div class="form-group">
+                                <label for="customHeight">Height (inches)</label>
+                                <input type="number" id="customHeight" name="customHeight" min="0.5" max="60" step="0.5" placeholder="e.g. 8">
+                            </div>
+                        </div>
+
+                        <!-- ===== STEP: PLACEMENT (auto-filled from the reference file name) ===== -->
+                        <div class="form-group">
+                            <label for="placement">Tattoo Placement (where to put it)</label>
+                            <select id="placement" name="placement" required>
+                                <option value="">Select Placement</option>
+                                <optgroup label="Arms">
+                                    <option value="Shoulder">Shoulder</option>
+                                    <option value="Upper Arm">Upper Arm</option>
+                                    <option value="Forearm">Forearm</option>
+                                    <option value="Wrist">Wrist</option>
+                                    <option value="Hand">Hand</option>
+                                    <option value="Full Sleeve">Full Sleeve</option>
+                                    <option value="Half Sleeve">Half Sleeve</option>
+                                    <option value="Quarter Sleeve">Quarter Sleeve</option>
+                                </optgroup>
+                                <optgroup label="Torso">
+                                    <option value="Chest">Chest</option>
+                                    <option value="Ribs">Ribs</option>
+                                    <option value="Stomach">Stomach</option>
+                                    <option value="Upper Back">Upper Back</option>
+                                    <option value="Lower Back">Lower Back</option>
+                                    <option value="Full Back">Full Back</option>
+                                </optgroup>
+                                <optgroup label="Legs">
+                                    <option value="Thigh">Thigh</option>
+                                    <option value="Knee">Knee</option>
+                                    <option value="Calf">Calf</option>
+                                    <option value="Ankle">Ankle</option>
+                                    <option value="Foot">Foot</option>
+                                </optgroup>
+                                <optgroup label="Other">
+                                    <option value="Neck">Neck</option>
+                                    <option value="Behind Ear">Behind Ear</option>
+                                    <option value="Collarbone">Collarbone</option>
+                                    <option value="Other">Other (specify)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <div class="form-row" id="placementDetailRow">
+                            <div class="form-group">
+                                <label for="placementSide">Side</label>
+                                <select id="placementSide" name="placementSide">
+                                    <option value="">Not applicable</option>
+                                    <option value="Left">Left</option>
+                                    <option value="Right">Right</option>
+                                    <option value="Center">Center</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="placementOtherGroup" hidden>
+                                <label for="placementOther">Specify Placement</label>
+                                <input type="text" id="placementOther" name="placementOther" placeholder="e.g. inner bicep">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== COLUMN 3: PAYMENT + SUMMARY ===== -->
+                    <div class="modal-col">
+
+                        <!-- Auto-computed amount -->
+                        <div class="amount-box">
+                            <span class="amount-label">Estimated Amount</span>
+                            <span class="amount-value" id="amountDisplay">&#8369;0.00</span>
+                            <small class="amount-note" id="amountNote">Select a tattoo size to compute the amount.</small>
+                            <input type="hidden" id="amount" name="amount" value="0">
+                        </div>
+
+                        <!-- ===== STEP: PAYMENT ===== -->
+                        <h4>Payment</h4>
+                        <div class="form-row" id="paymentRow">
+                            <div class="form-group">
+                                <label for="paymentMethod">Payment Method</label>
+                                <select id="paymentMethod" name="paymentMethod" required>
+                                    <option value="">Select Payment Method</option>
+                                    <option value="Cash">Cash</option>
+                                    <option value="GCash">GCash</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="paymentAmount">Payment (Down Payment)</label>
+                                <input type="number" id="paymentAmount" name="paymentAmount" min="0" step="0.01" placeholder="0.00">
+                            </div>
+                        </div>
+
+                        <div class="amount-box">
+                            <span class="amount-label">Remaining Balance</span>
+                            <span class="amount-value" id="balanceDisplay">&#8369;0.00</span>
+                            <small class="amount-note" id="paymentNote">Enter your payment to see the remaining balance.</small>
+                            <input type="hidden" id="balance" name="balance" value="0">
+                        </div>
+
+                        <h4>Booking summary</h4>
+                        <div class="summary">
+                            <div class="sum-row"><span>Artist</span><b id="sumArtist">-</b></div>
+                            <div class="sum-row"><span>Style</span><b id="sumStyle">-</b></div>
+                            <div class="sum-row"><span>Date</span><b id="sumDate">-</b></div>
+                            <div class="sum-row"><span>Time</span><b id="sumTime">-</b></div>
+                            <div class="sum-row"><span>Size</span><b id="sumSize">-</b></div>
+                            <div class="sum-row"><span>Placement</span><b id="sumPlacement">-</b></div>
+                        </div>
+
+                        <div class="modal-actions">
+                            <button type="button" class="cancel-btn" onclick="closeAppointmentModal()">Cancel</button>
+                            <button type="submit" class="submit-btn">&#9889; Book Appointment</button>
+                        </div>
+                    </div>
+
+                </form>
             </div>
-
-            <form id="appointmentForm">
-
-                <div class="form-group">
-                    <label for="clientName">Full Name</label>
-                    <input type="text" id="clientName" name="clientName" placeholder="Enter your full name" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="phone">Contact Number</label>
-                    <input type="tel" id="phone" name="phone" placeholder="Enter your contact number" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="artist">Tattoo Artist</label>
-                    <select id="artist" name="artist"></select>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="date">Appointment Date</label>
-                        <input type="date" id="date" name="date" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="time">Appointment Time</label>
-                        <input type="time" id="time" name="time" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="tattooType">Tattoo Type</label>
-                    <select id="tattooType" name="tattooType" required>
-                        <option value="">Select Tattoo Type</option>
-                        <option value="Traditional">Traditional</option>
-                        <option value="Minimalist">Minimalist</option>
-                        <option value="Realism">Realism</option>
-                        <option value="Tribal">Tribal</option>
-                        <option value="Custom">Custom Design</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="description">Tattoo Description</label>
-                    <textarea id="description" name="description" rows="4" placeholder="Describe your desired tattoo..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="reference">Reference Photo</label>
-                    <input type="file" id="reference" name="reference" accept="image/*">
-                </div>
-
-                <!-- ===== STEP: TATTOO SIZE ===== -->
-                <div class="form-group">
-                    <label for="tattooSize">Tattoo Size</label>
-                    <select id="tattooSize" name="tattooSize" required>
-                        <option value="">Select Tattoo Size</option>
-                        <option value="Small">Small (up to 3 in) &mdash; &#8369;700</option>
-                        <option value="Medium">Medium (up to 6 in) &mdash; &#8369;1,500</option>
-                        <option value="Large">Large (up to 12 in) &mdash; &#8369;10,000</option>
-                        <option value="Custom">Custom (priced by inches)</option>
-                    </select>
-                </div>
-
-                <!-- Shown only when "Custom" is selected -->
-                <div class="form-row" id="customSizeRow" hidden>
-                    <div class="form-group">
-                        <label for="customWidth">Width (inches)</label>
-                        <input type="number" id="customWidth" name="customWidth" min="0.5" max="60" step="0.5" placeholder="e.g. 5">
-                    </div>
-                    <div class="form-group">
-                        <label for="customHeight">Height (inches)</label>
-                        <input type="number" id="customHeight" name="customHeight" min="0.5" max="60" step="0.5" placeholder="e.g. 8">
-                    </div>
-                </div>
-
-                <!-- Auto-computed amount -->
-                <div class="amount-box">
-                    <span class="amount-label">Estimated Amount</span>
-                    <span class="amount-value" id="amountDisplay">&#8369;0.00</span>
-                    <small class="amount-note" id="amountNote">Select a tattoo size to compute the amount.</small>
-                    <input type="hidden" id="amount" name="amount" value="0">
-                </div>
-
-                <!-- ===== STEP: PLACEMENT ===== -->
-                <div class="form-group">
-                    <label for="placement">Tattoo Placement (where to put it)</label>
-                    <select id="placement" name="placement" required>
-                        <option value="">Select Placement</option>
-                        <optgroup label="Arms">
-                            <option value="Shoulder">Shoulder</option>
-                            <option value="Upper Arm">Upper Arm</option>
-                            <option value="Forearm">Forearm</option>
-                            <option value="Wrist">Wrist</option>
-                            <option value="Hand">Hand</option>
-                            <option value="Full Sleeve">Full Sleeve</option>
-                        </optgroup>
-                        <optgroup label="Torso">
-                            <option value="Chest">Chest</option>
-                            <option value="Ribs">Ribs</option>
-                            <option value="Stomach">Stomach</option>
-                            <option value="Upper Back">Upper Back</option>
-                            <option value="Lower Back">Lower Back</option>
-                            <option value="Full Back">Full Back</option>
-                        </optgroup>
-                        <optgroup label="Legs">
-                            <option value="Thigh">Thigh</option>
-                            <option value="Knee">Knee</option>
-                            <option value="Calf">Calf</option>
-                            <option value="Ankle">Ankle</option>
-                            <option value="Foot">Foot</option>
-                        </optgroup>
-                        <optgroup label="Other">
-                            <option value="Neck">Neck</option>
-                            <option value="Behind Ear">Behind Ear</option>
-                            <option value="Collarbone">Collarbone</option>
-                            <option value="Other">Other (specify)</option>
-                        </optgroup>
-                    </select>
-                </div>
-
-                <div class="form-row" id="placementDetailRow">
-                    <div class="form-group">
-                        <label for="placementSide">Side</label>
-                        <select id="placementSide" name="placementSide">
-                            <option value="">Not applicable</option>
-                            <option value="Left">Left</option>
-                            <option value="Right">Right</option>
-                            <option value="Center">Center</option>
-                        </select>
-                    </div>
-                    <div class="form-group" id="placementOtherGroup" hidden>
-                        <label for="placementOther">Specify Placement</label>
-                        <input type="text" id="placementOther" name="placementOther" placeholder="e.g. inner bicep">
-                    </div>
-                </div>
-
-                <!-- ===== STEP: PAYMENT ===== -->
-                <div class="form-row" id="paymentRow">
-                    <div class="form-group">
-                        <label for="paymentMethod">Payment Method</label>
-                        <select id="paymentMethod" name="paymentMethod" required>
-                            <option value="">Select Payment Method</option>
-                            <option value="Cash">Cash</option>
-                            <option value="GCash">GCash</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="paymentAmount">Payment (Down Payment)</label>
-                        <input type="number" id="paymentAmount" name="paymentAmount" min="0" step="0.01" placeholder="0.00">
-                    </div>
-                </div>
-
-                <div class="amount-box">
-                    <span class="amount-label">Remaining Balance</span>
-                    <span class="amount-value" id="balanceDisplay">&#8369;0.00</span>
-                    <small class="amount-note" id="paymentNote">Enter your payment to see the remaining balance.</small>
-                    <input type="hidden" id="balance" name="balance" value="0">
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="cancel-btn" onclick="closeAppointmentModal()">Cancel</button>
-                    <button type="submit" class="submit-btn">&#9889; Book Appointment</button>
-                </div>
-
-            </form>
 
         </div>
 
     </div>
+
+
+
 
     <!-- ===== SCRIPTS ===== -->
     <script>
@@ -282,6 +330,7 @@
     </script>
 
     <script src="/js/clientdashboard.js"></script>
-
+    <script src="/js/appointment.js"></script>
+    <script src="/js/Modal-ui.js"></script>
 </body>
 </html>

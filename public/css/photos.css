@@ -9,8 +9,8 @@ html,
 body {
     width: 100%;
     min-height: 100%;
-    overflow-x: hidden;
-    overflow-x: clip;   /* para gumana ang sticky navbar sa mobile */
+    overflow-x: hidden;   /* fallback para sa lumang browser */
+    overflow-x: clip;     /* para gumana ang sticky navbar */
 }
 
 body {
@@ -37,7 +37,12 @@ body::before {
     pointer-events: none;
 }
 
+/* ===== NAVBAR (STICKY - laging nasa taas habang nag-scroll) ===== */
 .navbar {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 1000;          /* dati 1 - natatakpan ng .container (z-index 1) */
     width: 100%;
     min-height: 70px;
     background: #111;
@@ -46,8 +51,6 @@ body::before {
     justify-content: space-between;
     padding: 0 40px;
     color: #fff;
-    position: relative;
-    z-index: 1;
 }
 
 /* ===== LOGO STYLES WITH IMAGE ===== */
@@ -335,8 +338,9 @@ body::before {
 
 @media (max-width: 768px) {
 
-    /* Ibalik ang navbar sa isang row (override ng 900px rule) */
+    /* Ibalik ang navbar sa isang row (override ng 900px rule) - sticky pa rin */
     .navbar {
+        position: -webkit-sticky;
         position: sticky;
         top: 0;
         z-index: 1000;

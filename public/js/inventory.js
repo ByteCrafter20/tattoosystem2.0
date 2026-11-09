@@ -5,30 +5,28 @@
 //   - picking an Item Name auto-selects its Category
 
 var API_URL = '/api/inventory';
-var CURRENT_ITEMS = []; // keeps the last-loaded inventory, used to block duplicate names
+var CURRENT_ITEMS = []; // keeps the last-loaded inventory, used to detect existing items
 
 var ITEMS_BY_CATEGORY = {
     Needles: [
-        '1RL', '3RL', '5RL', '7RL', '9RL', '11RL', '14RL',
+        '7RL', '9RL', '11RL',
         '5RS', '7RS', '9RS',
-        '5M1', '7M1', '9M1', '11M1', '13M1', '15M1',
-        '7CM', '9CM', '11CM', '13CM', '15CM'
+        '11CM', '13CM',
     ],
     Ink: [
         'Black', 'White', 'Gray', 'Red', 'Blue', 'Green',
         'Yellow', 'Purple', 'Pink'
     ],
     Machines: [
-        'Rotary Machine', 'Coil Machine', 'Pen Machine',
-        'Power Supply', 'Foot Pedal', 'Clip Cord'
+        'Pen Tattoo Machine',
     ],
     Accessories: [
-        'Disposable Grip', 'Stainless Grip', 'Cartridge Tube',
-        'Ink Cups', 'Rubber Bands', 'Stencil Paper', 'Stencil Gel'
+        'Disposable Grip Tape', 'Tape',
+        'Ink Cups', 'Stencil Paper', 'Stencil Gel',
     ],
     Sanitation: [
-        'Plastic Gloves', 'Ointment', 'Green Soap', 'Alcohol',
-        'Cling Wrap', 'Second Skin', 'Gauze', 'Paper Towel', 'Barrier Film'
+        'Plastic Gloves', 'Ointment', 'Foam Wash', 'Alcohol Spray',
+        'Cling Wrap', 'Paper Towel', 'Baby Wipes',
     ],
     Other: []
 };
@@ -38,6 +36,14 @@ var AUTO_SELECT_ITEM = {
     Gloves: 'Plastic Gloves',
     Ointment: 'Ointment'
 };
+
+// Every field name the minimum stock might be stored under on the server.
+var MIN_STOCK_KEYS = [
+    'reorderLevel', 'reorderPoint', 'reorderQuantity',
+    'minimumStock', 'minStock', 'minimumStockLevel', 'minStockLevel',
+    'minimumQuantity', 'minQuantity', 'minLevel', 'minimum', 'min',
+    'lowStockThreshold', 'lowStockLevel', 'threshold', 'stockThreshold'
+];
 
 // In-page toast notification (replaces browser alert()).
 // Injects its own container/styles once, so no HTML/CSS changes are needed.
@@ -91,6 +97,84 @@ function showNotification(message, type) {
     }, 4000);
 }
 
+// Inline error shown inside the Add Inventory modal.
+function showModalError(message) {
+    var form = document.getElementById('inventoryForm');
+    var box = document.getElementById('inventoryFormError');
+
+    if (!box) {
+        box = document.createElement('div');
+        box.id = 'inventoryFormError';
+        box.style.background = '#fdecea';
+        box.style.border = '1px solid #f5c2c0';
+        box.style.color = '#b33c3c';
+        box.style.padding = '10px 14px';
+        box.style.borderRadius = '6px';
+        box.style.fontSize = '14px';
+        box.style.margin = '12px 0';
+
+        // Place it right above the buttons row.
+        var submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn && submitBtn.parentNode) {
+            submitBtn.parentNode.parentNode.insertBefore(box, submitBtn.parentNode);
+        } else {
+            form.appendChild(box);
+        }
+    }
+
+    box.textContent = message;
+    box.style.display = 'block';
+}
+
+function clearModalError() {
+    var box = document.getElementById('inventoryFormError');
+    if (box) {
+        box.style.display = 'none';
+        box.textContent = '';
+    }
+}
+
+// Locks (or unlocks) the fields and the Save button in the Add Inventory modal.
+function setFormLocked(locked) {
+    var form = document.getElementById('inventoryForm');
+    var ids = ['itemQuantity', 'minimumStock', 'itemSupplier'];
+
+    ids.forEach(function (id) {
+        var input = document.getElementById(id);
+        if (input) {
+            input.disabled = locked;
+            input.style.opacity = locked ? '0.5' : '';
+            input.style.cursor = locked ? 'not-allowed' : '';
+        }
+    });
+
+    var saveBtn = form.querySelector('button[type="submit"]');
+    if (saveBtn) {
+        saveBtn.disabled = locked;
+        saveBtn.style.opacity = locked ? '0.5' : '';
+        saveBtn.style.cursor = locked ? 'not-allowed' : '';
+    }
+}
+
+// Shows "already on the list" inside the modal as soon as the chosen
+// item exists in the inventory, and locks Quantity, Minimum Stock Level
+// and Save. Unlocks everything otherwise.
+// Returns true when the item already exists.
+function checkExistingItem() {
+    var name = getItemName();
+    var existing = name ? findExistingItem(name) : null;
+
+    if (existing) {
+        showModalError(existing.name + ' is already on the list');
+        setFormLocked(true);
+        return true;
+    }
+
+    clearModalError();
+    setFormLocked(false);
+    return false;
+}
+
 function escapeHtml(text) {
     var div = document.createElement('div');
     div.textContent = text == null ? '' : text;
@@ -98,15 +182,28 @@ function escapeHtml(text) {
 }
 
 // Minimum stock can come back under different field names depending on
-// the database model. Use whichever one exists; fall back to 0.
+// the database model. Try the known names first, then scan every field
+// whose name looks like a minimum / reorder / threshold. Falls back to 0.
 function getMinStock(item) {
-    var keys = ['reorderLevel', 'minimumStock', 'minStock', 'minimumQuantity', 'lowStockThreshold'];
-    for (var i = 0; i < keys.length; i++) {
-        var value = item[keys[i]];
+    var i;
+
+    for (i = 0; i < MIN_STOCK_KEYS.length; i++) {
+        var value = item[MIN_STOCK_KEYS[i]];
         if (value !== undefined && value !== null && value !== '') {
             return value;
         }
     }
+
+    var keys = Object.keys(item);
+    for (i = 0; i < keys.length; i++) {
+        if (/min|reorder|threshold/i.test(keys[i])) {
+            var found = item[keys[i]];
+            if (found !== undefined && found !== null && found !== '' && typeof found !== 'object') {
+                return found;
+            }
+        }
+    }
+
     return 0;
 }
 
@@ -207,12 +304,18 @@ async function loadInventory() {
     try {
         var response = await fetch(API_URL);
         var items = await response.json();
-        CURRENT_ITEMS = items; // keep a copy for duplicate checks in saveItem()
+        CURRENT_ITEMS = items; // keep a copy for existing-item checks
+
+        // Debug: shows exactly which fields the server sends back.
+        // If the minimum stock field is missing here, the server is not saving it.
+        if (items.length) {
+            console.log('Inventory item fields from server:', items[0]);
+        }
 
         if (!items.length) {
             tbody.innerHTML =
                 '<tr>' +
-                    '<td colspan="7" style="text-align: center; padding: 40px; color: #666;">' +
+                    '<td colspan="6" style="text-align: center; padding: 40px; color: #666;">' +
                         'No items in inventory. Click "Add Inventory" to add one.' +
                     '</td>' +
                 '</tr>';
@@ -229,7 +332,6 @@ async function loadInventory() {
                     '<td><strong>' + escapeHtml(item.name) + '</strong></td>' +
                     '<td>' + escapeHtml(item.category) + '</td>' +
                     '<td>' + item.quantity + '</td>' +
-                    '<td>₱' + Number(item.price || 0).toFixed(2) + '</td>' +
                     '<td>' + escapeHtml(getMinStock(item)) + '</td>' +
                     '<td><span class="stock-status ' + statusClass + '">' + escapeHtml(item.status) + '</span></td>' +
                     '<td>' +
@@ -249,7 +351,7 @@ async function loadInventory() {
         console.error('Error loading inventory:', error);
         tbody.innerHTML =
             '<tr>' +
-                '<td colspan="7" style="text-align: center; padding: 40px; color: #b33c3c;">' +
+                '<td colspan="6" style="text-align: center; padding: 40px; color: #b33c3c;">' +
                     'Error loading inventory' +
                 '</td>' +
             '</tr>';
@@ -280,7 +382,9 @@ function updateStats(items) {
 
 function openInventoryModal() {
     document.getElementById('inventoryForm').reset();
+    clearModalError();
     populateItemNames();
+    checkExistingItem();
     document.getElementById('inventoryModal').classList.add('active');
 }
 
@@ -292,33 +396,29 @@ function closeInventoryModal() {
 async function saveItem(event) {
     event.preventDefault();
 
-    var priceInput = document.getElementById('itemPrice');
+    // Safety net: never save when the item already exists.
+    if (checkExistingItem()) {
+        return;
+    }
+
     var supplierInput = document.getElementById('itemSupplier');
-    var price = priceInput ? parseFloat(priceInput.value) : 0;
     var minStock = parseInt(document.getElementById('minimumStock').value, 10);
 
     var data = {
         name: getItemName(),
         category: document.getElementById('itemCategory').value,
         quantity: parseInt(document.getElementById('itemQuantity').value, 10),
-        price: isNaN(price) ? 0 : price,
-        // Sent under every common name so the server saves it
-        // whichever field its model uses.
-        reorderLevel: minStock,
-        minimumStock: minStock,
-        minStock: minStock,
         supplier: supplierInput ? supplierInput.value.trim() : ''
     };
 
-    if (!data.name || !data.category || isNaN(data.quantity) || isNaN(minStock)) {
-        showNotification('Please fill in all fields', 'error');
-        return;
-    }
+    // Sent under every common name so the server saves it
+    // whichever field its model uses.
+    MIN_STOCK_KEYS.forEach(function (key) {
+        data[key] = minStock;
+    });
 
-    // Block duplicates: same item name (case-insensitive) already in inventory.
-    var existing = findExistingItem(data.name);
-    if (existing) {
-        showNotification(existing.name + ' is already in the Inventory', 'error');
+    if (!data.name || !data.category || isNaN(data.quantity) || isNaN(minStock)) {
+        showModalError('Please fill in all fields');
         return;
     }
 
@@ -335,11 +435,11 @@ async function saveItem(event) {
             showNotification('Item added', 'success');
         } else {
             var error = await response.json();
-            showNotification(error.error || 'Error saving item', 'error');
+            showModalError(error.error || 'Error saving item');
         }
     } catch (error) {
         console.error('Error saving item:', error);
-        showNotification('Error saving item', 'error');
+        showModalError('Error saving item');
     }
 }
 
@@ -418,6 +518,12 @@ document.addEventListener('DOMContentLoaded', function () {
             populateItemNames();
         }
     });
+
+    // Check automatically whenever the chosen item changes.
+    // (Registered after the handlers above so the dropdowns are already updated.)
+    categorySelect.addEventListener('change', checkExistingItem);
+    itemSelect.addEventListener('change', checkExistingItem);
+    document.getElementById('itemNameOther').addEventListener('input', checkExistingItem);
 
     document.getElementById('inventoryTable').addEventListener('click', function (event) {
         var button = event.target.closest('.action-btn');

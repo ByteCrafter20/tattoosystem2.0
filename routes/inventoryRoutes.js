@@ -1,5 +1,5 @@
 import express from "express";
-import Inventory from "../models/inventory.js";
+import Inventory from "../models/Inventory.js";
 
 const router = express.Router();
 
@@ -60,19 +60,21 @@ router.post("/", async (req, res) => {
 
     try {
 
-        const { name, category, quantity, price, reorderLevel, supplier } = req.body;
+        const { name, category, quantity, reorderLevel } = req.body;
 
         if (!name || !category) {
             return res.status(400).json({ error: "Name and category are required" });
         }
 
+        const qty = Number(quantity);
+        const level = Number(reorderLevel);
+
+        // Allow 0 as a valid Low Stock Alert; only fall back to 5 when empty/invalid
         const item = await Inventory.create({
             name: name,
             category: category,
-            quantity: Number(quantity) || 0,
-            price: Number(price) || 0,
-            reorderLevel: Number(reorderLevel) || 5,
-            supplier: supplier || ""
+            quantity: Number.isFinite(qty) && qty >= 0 ? qty : 0,
+            reorderLevel: Number.isFinite(level) && level >= 0 ? level : 5
         });
 
         return res.status(201).json(item);

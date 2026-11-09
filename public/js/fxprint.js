@@ -1,21 +1,4 @@
 // public/js/stencil.js
-//
-// Stencil Print - pumili ng larawan, i-filter, itakda ang laki sa inches,
-// i-preview sa papel, at i-print o i-download.
-//
-// BAGO: puwede nang maglagay ng higit sa isang picture sa papel.
-//   - I-click ang picture para piliin ito.
-//   - I-drag ang picture kahit saan sa papel.
-//   - Bawat picture ay may sariling filter, laki, rotate at mirror.
-//   - Delete key (o ang x sa listahan) para tanggalin ang napiling picture.
-//
-// Library galing sa:
-//     GET /api/photos                      (designs at gallery)
-//     GET /api/appointments/admin/all      (reference photos ng mga client)
-//
-// Kapag may ?image=/uploads/xxx.png sa URL (galing sa modal), awtomatiko
-// itong ilalagay sa papel.
-
 document.addEventListener('DOMContentLoaded', function () {
 
     var MAX_SIDE = 1600;   // pinakamalaking side ng working image, sa pixels
@@ -461,6 +444,8 @@ document.addEventListener('DOMContentLoaded', function () {
         ctx.putImageData(imageData, 0, 0);
 
         l.ratio = c.height / c.width;
+        l._key = renderKey(l);
+        touch();
     }
 
     // ==================================================
@@ -475,10 +460,18 @@ document.addEventListener('DOMContentLoaded', function () {
         l.canvas.style.top = (l.y / p.h * 100) + '%';
         l.canvas.style.width = (l.w / p.w * 100) + '%';
         l.canvas.style.height = (l.h / p.h * 100) + '%';
+        l.canvas.style.transformOrigin = '50% 50%';
+        l.canvas.style.transform = l.angle ? 'rotate(' + l.angle + 'deg)' : '';
 
         if (crop && crop.layer === l) {
             placeCropOverlay();
         }
+
+        if (xform && xform.layer === l) {
+            placeXformOverlay();
+        }
+
+        touch();
     }
 
     function layoutAll() {
@@ -622,6 +615,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function selectLayer(l) {
+        if (xform && xform.layer !== l) {
+            commitXform();
+        }
+
         if (crop && crop.layer !== l) {
             exitCrop();
         }
@@ -655,7 +652,12 @@ document.addEventListener('DOMContentLoaded', function () {
             exitCrop();
         }
 
+        if (xform && xform.layer === l) {
+            exitXform();
+        }
+
         layers.splice(index, 1);
+        touch();
 
         if (l.canvas.parentNode) {
             l.canvas.parentNode.removeChild(l.canvas);
@@ -726,6 +728,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // I-click ang walang laman na bahagi ng papel para i-unselect
     paperBox.addEventListener('pointerdown', function (event) {
         if (event.target === paperBox || event.target === empty) {
+            commitXform();
             exitCrop();
             selected = null;
             updateUI();
@@ -820,6 +823,8 @@ document.addEventListener('DOMContentLoaded', function () {
         o.style.top = (l.y / p.h * 100) + '%';
         o.style.width = (l.w / p.w * 100) + '%';
         o.style.height = (l.h / p.h * 100) + '%';
+        o.style.transformOrigin = '50% 50%';
+        o.style.transform = l.angle ? 'rotate(' + l.angle + 'deg)' : '';
 
         placeCropBox();
     }
@@ -833,7 +838,11 @@ document.addEventListener('DOMContentLoaded', function () {
         event.stopPropagation();
 
         var target = event.currentTarget;
-        var area = crop.overlay.getBoundingClientRect();
+        var cl = crop.layer, cp = paper(), pr = paperBox.getBoundingClientRect();
+        var aw = cl.w / cp.w * pr.width;
+        var ah = cl.h / cp.h * pr.height;
+        var ang = (cl.angle || 0) * Math.PI / 180;
+        var cos = Math.cos(ang), sin = Math.sin(ang);
         var startX = event.clientX;
         var startY = event.clientY;
         var orig = { x: crop.rect.x, y: crop.rect.y, w: crop.rect.w, h: crop.rect.h };
@@ -847,8 +856,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            var dx = (e.clientX - startX) / area.width;
-            var dy = (e.clientY - startY) / area.height;
+            var rx = e.clientX - startX, ry = e.clientY - startY;
+            var dx = (rx * cos + ry * sin) / aw;
+            var dy = (-rx * sin + ry * cos) / ah;
 
             var left = orig.x;
             var top = orig.y;
@@ -955,6 +965,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 : 'Add a picture first, then press Crop.';
             return;
         }
+
+        commitXform();
 
         crop = { layer: selected, rect: { x: 0.1, y: 0.1, w: 0.8, h: 0.8 }, overlay: null, box: null };
 
@@ -1100,6 +1112,7 @@ document.addEventListener('DOMContentLoaded', function () {
             invert: false,
             mirror: false,
             rotation: 0,
+            angle: 0,          // free rotation, in degrees
             removeBg: false,
             bgTol: 25,
 
@@ -1400,13 +1413,17 @@ document.addEventListener('DOMContentLoaded', function () {
         ctx.globalCompositeOperation = 'multiply';
 
         layers.forEach(function (l) {
+            ctx.save();
+            ctx.translate((l.x + l.w / 2) * EXPORT_DPI, (l.y + l.h / 2) * EXPORT_DPI);
+            ctx.rotate((l.angle || 0) * Math.PI / 180);
             ctx.drawImage(
                 l.canvas,
-                l.x * EXPORT_DPI,
-                l.y * EXPORT_DPI,
+                -l.w * EXPORT_DPI / 2,
+                -l.h * EXPORT_DPI / 2,
                 l.w * EXPORT_DPI,
                 l.h * EXPORT_DPI
             );
+            ctx.restore();
         });
 
         return out;
@@ -1581,11 +1598,476 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ==================================================
+    // HISTORY (Ctrl+Z / Ctrl+Y)
+    // ==================================================
+
+    var undoStack = [];
+    var hIndex = -1;
+    var hTimer = null;
+    var restoring = false;
+    var imgSeq = 1;
+    var HISTORY_MAX = 100;
+
+    var RENDER_PROPS = ['filter', 'brightness', 'contrast', 'level', 'invert', 'mirror', 'rotation', 'removeBg', 'bgTol'];
+    var STATE_PROPS = RENDER_PROPS.concat(['x', 'y', 'w', 'h', 'angle', 'ratio', 'cropped', 'img', 'baseImg', 'baseBox', 'name']);
+
+    function imgId(img) {
+        if (!img._hid) {
+            img._hid = imgSeq++;
+        }
+
+        return img._hid;
+    }
+
+    function renderKey(l) {
+        return RENDER_PROPS.map(function (k) { return l[k]; }).join('|') + '|' + imgId(l.img);
+    }
+
+    function takeState() {
+        return {
+            selected: selected,
+            layers: layers.map(function (l) {
+                var s = { layer: l };
+
+                STATE_PROPS.forEach(function (k) { s[k] = l[k]; });
+
+                return s;
+            })
+        };
+    }
+
+    function signature(st) {
+        return st.layers.map(function (s) {
+            return s.layer.id + ':' + STATE_PROPS.map(function (k) {
+                if (k === 'img' || k === 'baseImg') { return imgId(s[k]); }
+                if (k === 'baseBox') { return JSON.stringify(s[k]); }
+                return s[k];
+            }).join(',');
+        }).join(';');
+    }
+
+    function commitNow() {
+        clearTimeout(hTimer);
+        hTimer = null;
+
+        var st = takeState();
+        st.sig = signature(st);
+
+        if (hIndex >= 0 && undoStack[hIndex].sig === st.sig) {
+            undoStack[hIndex].selected = st.selected;
+            return;
+        }
+
+        undoStack.splice(hIndex + 1);
+        undoStack.push(st);
+
+        if (undoStack.length > HISTORY_MAX) {
+            undoStack.shift();
+        }
+
+        hIndex = undoStack.length - 1;
+    }
+
+    // Called after any change. Rapid changes (slider drags etc.) become one step.
+    function touch() {
+        if (restoring || xform) {
+            return;
+        }
+
+        clearTimeout(hTimer);
+        hTimer = setTimeout(commitNow, 350);
+    }
+
+    function restoreState(st) {
+        restoring = true;
+
+        exitCrop();
+        exitXform();
+
+        var keep = st.layers.map(function (s) { return s.layer; });
+
+        layers.forEach(function (l) {
+            if (keep.indexOf(l) === -1 && l.canvas.parentNode) {
+                l.canvas.parentNode.removeChild(l.canvas);
+            }
+        });
+
+        layers = keep;
+
+        st.layers.forEach(function (s) {
+            var l = s.layer;
+
+            STATE_PROPS.forEach(function (k) { l[k] = s[k]; });
+
+            if (l._key !== renderKey(l)) {
+                renderLayer(l);
+            }
+
+            paperBox.appendChild(l.canvas);
+        });
+
+        selected = layers.indexOf(st.selected) > -1 ? st.selected : null;
+
+        layoutAll();
+        updateUI();
+
+        if (selected) {
+            syncControls();
+        }
+
+        restoring = false;
+    }
+
+    function undo() {
+        if (xform) { commitXform(); }
+        if (hTimer) { commitNow(); }
+        if (hIndex <= 0) { return; }
+
+        hIndex--;
+        restoreState(undoStack[hIndex]);
+    }
+
+    function redo() {
+        if (xform) { commitXform(); }
+        if (hTimer) { commitNow(); }
+        if (hIndex >= undoStack.length - 1) { return; }
+
+        hIndex++;
+        restoreState(undoStack[hIndex]);
+    }
+
+    // ==================================================
+    // FREE TRANSFORM (T / Ctrl+T) - move, reshape, rotate any angle
+    // ==================================================
+
+    var xform = null;   // { layer, start, overlay }
+    var XFORM_MIN = 0.1;   // smallest size in inches
+
+    var xformChip = document.createElement('button');
+    xformChip.type = 'button';
+    xformChip.className = 'st-chip';
+    xformChip.textContent = 'Transform (T)';
+    xformChip.style.gridColumn = '1 / -1';
+    xformChip.style.flex = '1 1 100%';
+    filtersBox.appendChild(xformChip);
+
+    var xformBar = document.createElement('div');
+    xformBar.style.cssText = 'display:none;margin-top:8px;';
+    xformBar.innerHTML =
+        '<small class="st-muted" style="display:block;margin-bottom:6px;">' +
+            'Drag handles to reshape (Shift = keep proportions). Drag the round dot to rotate (Shift = 15\u00B0 steps). Enter = apply, Esc = cancel.' +
+        '</small>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+            '<button type="button" class="st-btn" id="stXformApply">Apply</button>' +
+            '<button type="button" class="st-btn st-btn-light" id="stXformCancel">Cancel</button>' +
+            '<button type="button" class="st-btn st-btn-light" id="stXformReset">Reset Rotation</button>' +
+        '</div>';
+    cropBar.insertAdjacentElement('afterend', xformBar);
+
+    function placeXformOverlay() {
+        if (!xform) {
+            return;
+        }
+
+        var l = xform.layer;
+        var p = paper();
+        var o = xform.overlay;
+
+        o.style.left = (l.x / p.w * 100) + '%';
+        o.style.top = (l.y / p.h * 100) + '%';
+        o.style.width = (l.w / p.w * 100) + '%';
+        o.style.height = (l.h / p.h * 100) + '%';
+        o.style.transform = l.angle ? 'rotate(' + l.angle + 'deg)' : '';
+    }
+
+    function xformDrag(event, mode) {
+        if (!xform) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        var l = xform.layer;
+        var p = paper();
+        var rect = paperBox.getBoundingClientRect();
+        var ppi = rect.width / p.w;   // screen pixels per inch
+        var target = event.currentTarget;
+        var o = { x: l.x, y: l.y, w: l.w, h: l.h, a: l.angle || 0 };
+        var cx0 = o.x + o.w / 2;
+        var cy0 = o.y + o.h / 2;
+        var rad = o.a * Math.PI / 180;
+        var cos = Math.cos(rad);
+        var sin = Math.sin(rad);
+        var startX = event.clientX;
+        var startY = event.clientY;
+
+        try {
+            target.setPointerCapture(event.pointerId);
+        } catch (err) { /* ok */ }
+
+        function move(e) {
+            if (mode === 'rotate') {
+                var px = rect.left + cx0 * ppi;
+                var py = rect.top + cy0 * ppi;
+                var a = Math.atan2(e.clientY - py, e.clientX - px) * 180 / Math.PI + 90;
+
+                if (e.shiftKey) {
+                    a = Math.round(a / 15) * 15;
+                }
+
+                l.angle = round(((a % 360) + 540) % 360 - 180, 1);
+                sizeNote.textContent = 'Rotation: ' + l.angle + '\u00B0';
+            } else if (mode === 'move') {
+                l.x = clampPos(o.x + (e.clientX - startX) / ppi, l.w, p.w);
+                l.y = clampPos(o.y + (e.clientY - startY) / ppi, l.h, p.h);
+            } else {
+                var rx = (e.clientX - startX) / ppi;
+                var ry = (e.clientY - startY) / ppi;
+
+                // pointer movement in the picture's own (rotated) axes
+                var ldx = rx * cos + ry * sin;
+                var ldy = -rx * sin + ry * cos;
+
+                var sx = mode.indexOf('e') > -1 ? 1 : (mode.indexOf('w') > -1 ? -1 : 0);
+                var sy = mode.indexOf('s') > -1 ? 1 : (mode.indexOf('n') > -1 ? -1 : 0);
+
+                var nw = o.w + sx * ldx;
+                var nh = o.h + sy * ldy;
+
+                if (e.shiftKey && sx && sy) {
+                    var k = Math.max(nw / o.w, nh / o.h);
+
+                    nw = o.w * k;
+                    nh = o.h * k;
+                }
+
+                nw = Math.max(XFORM_MIN, nw);
+                nh = Math.max(XFORM_MIN, nh);
+
+                // keep the opposite edge/corner fixed on the paper
+                var shx = sx * (nw - o.w) / 2;
+                var shy = sy * (nh - o.h) / 2;
+                var cx = cx0 + shx * cos - shy * sin;
+                var cy = cy0 + shx * sin + shy * cos;
+
+                l.w = nw;
+                l.h = nh;
+                l.x = cx - nw / 2;
+                l.y = cy - nh / 2;
+
+                widthInput.value = round(l.w, 2);
+                heightInput.value = round(l.h, 2);
+            }
+
+            layout(l);
+        }
+
+        function up() {
+            target.removeEventListener('pointermove', move);
+            target.removeEventListener('pointerup', up);
+            target.removeEventListener('pointercancel', up);
+
+            try {
+                target.releasePointerCapture(event.pointerId);
+            } catch (err) { /* ok */ }
+        }
+
+        target.addEventListener('pointermove', move);
+        target.addEventListener('pointerup', up);
+        target.addEventListener('pointercancel', up);
+    }
+
+    function buildXformOverlay() {
+        var o = document.createElement('div');
+
+        o.style.cssText =
+            'position:absolute;z-index:60;box-sizing:border-box;border:1px solid #e63946;' +
+            'cursor:move;touch-action:none;transform-origin:50% 50%;';
+
+        o.addEventListener('pointerdown', function (event) {
+            xformDrag(event, 'move');
+        });
+
+        CROP_HANDLES.forEach(function (h) {
+            var dot = document.createElement('div');
+
+            dot.style.cssText =
+                'position:absolute;width:12px;height:12px;box-sizing:border-box;' +
+                'margin:-6px 0 0 -6px;background:#fff;border:2px solid #e63946;' +
+                'border-radius:2px;touch-action:none;' +
+                'left:' + (h[1] * 100) + '%;top:' + (h[2] * 100) + '%;cursor:' + h[3] + ';';
+
+            dot.addEventListener('pointerdown', function (event) {
+                xformDrag(event, h[0]);
+            });
+
+            o.appendChild(dot);
+        });
+
+        var stick = document.createElement('div');
+        stick.style.cssText =
+            'position:absolute;left:50%;top:-26px;width:0;height:26px;' +
+            'border-left:1px solid #e63946;pointer-events:none;';
+        o.appendChild(stick);
+
+        var rot = document.createElement('div');
+        rot.style.cssText =
+            'position:absolute;left:50%;top:-26px;width:14px;height:14px;box-sizing:border-box;' +
+            'margin:-14px 0 0 -7px;border-radius:50%;background:#e63946;border:2px solid #fff;' +
+            'cursor:grab;touch-action:none;';
+        rot.addEventListener('pointerdown', function (event) {
+            xformDrag(event, 'rotate');
+        });
+        o.appendChild(rot);
+
+        paperBox.appendChild(o);
+        xform.overlay = o;
+    }
+
+    function startXform() {
+        if (xform) {
+            commitXform();
+            return;
+        }
+
+        if (!selected && layers.length === 1) {
+            selectLayer(layers[0]);
+        }
+
+        if (!selected) {
+            sizeNote.textContent = layers.length
+                ? 'Click a picture on the paper first, then press T.'
+                : 'Add a picture first, then press T.';
+            return;
+        }
+
+        exitCrop();
+
+        var l = selected;
+
+        xform = {
+            layer: l,
+            start: { x: l.x, y: l.y, w: l.w, h: l.h, angle: l.angle || 0 },
+            overlay: null
+        };
+
+        buildXformOverlay();
+        placeXformOverlay();
+
+        xformChip.classList.add('active');
+        xformBar.style.display = '';
+        sizeNote.textContent = 'Transform: drag handles to reshape, drag the round dot to rotate. Enter = apply, Esc = cancel.';
+    }
+
+    function exitXform() {
+        if (!xform) {
+            return;
+        }
+
+        if (xform.overlay && xform.overlay.parentNode) {
+            xform.overlay.parentNode.removeChild(xform.overlay);
+        }
+
+        xform = null;
+
+        xformChip.classList.remove('active');
+        xformBar.style.display = 'none';
+    }
+
+    function commitXform() {
+        if (!xform) {
+            return;
+        }
+
+        exitXform();
+        updateNote();
+        touch();
+    }
+
+    function cancelXform() {
+        if (!xform) {
+            return;
+        }
+
+        var l = xform.layer;
+        var s = xform.start;
+
+        l.x = s.x;
+        l.y = s.y;
+        l.w = s.w;
+        l.h = s.h;
+        l.angle = s.angle;
+
+        exitXform();
+        layout(l);
+        syncControls();
+        updateNote();
+    }
+
+    xformChip.addEventListener('click', startXform);
+    document.getElementById('stXformApply').addEventListener('click', commitXform);
+    document.getElementById('stXformCancel').addEventListener('click', cancelXform);
+    document.getElementById('stXformReset').addEventListener('click', function () {
+        if (xform) {
+            xform.layer.angle = 0;
+            layout(xform.layer);
+        }
+    });
+
+    // ==================================================
+    // SHORTCUTS
+    // ==================================================
+
+    document.addEventListener('keydown', function (event) {
+        var tag = event.target && event.target.tagName;
+        var type = event.target && event.target.type;
+        var typing = tag === 'TEXTAREA' || tag === 'SELECT' ||
+            (tag === 'INPUT' && type !== 'range' && type !== 'checkbox');
+        var mod = event.ctrlKey || event.metaKey;
+        var key = String(event.key).toLowerCase();
+
+        if (typing) {
+            return;
+        }
+
+        if (mod && key === 'z') {
+            event.preventDefault();
+            if (event.shiftKey) { redo(); } else { undo(); }
+            return;
+        }
+
+        if (mod && key === 'y') {
+            event.preventDefault();
+            redo();
+            return;
+        }
+
+        // Ctrl+T is reserved by Chrome/Edge (new tab) - plain T always works
+        if (key === 't' && !event.altKey && (mod || !event.shiftKey)) {
+            event.preventDefault();
+            startXform();
+            return;
+        }
+
+        if (key === 'enter' && xform && tag !== 'BUTTON') {
+            event.preventDefault();
+            commitXform();
+            return;
+        }
+
+        if (key === 'escape' && xform) {
+            cancelXform();
+        }
+    });
+
+    // ==================================================
     // INIT
     // ==================================================
 
     layoutAll();
     updateUI();
+    commitNow();   // starting point for Undo
 
     // Galing sa modal ng appointment: /fxprint?embed=1&image=/uploads/xxx.png
     var startImage = new URLSearchParams(window.location.search).get('image');

@@ -4,6 +4,8 @@
 document.addEventListener('DOMContentLoaded', function () {
 
     var REFRESH_MS = 15000;
+    var PH_TZ = 'Asia/Manila';
+    var USE_12H_TIME = true; // false = ipakita ang oras as 24-hour (e.g. 22:45)
 
     var tableBody = document.getElementById('appointmentTable');
     var emptyMessage = document.getElementById('noAppointments');
@@ -57,22 +59,71 @@ document.addEventListener('DOMContentLoaded', function () {
             .replace(/'/g, '&#39;');
     }
 
-    // YYYY-MM-DD sa local time, para tugma sa <input type="date">
+    // YYYY-MM-DD sa Philippine time, para tugma sa <input type="date">
     function toInputDate(value) {
         var parsed = new Date(value);
         if (isNaN(parsed.getTime())) {
             return '';
         }
-        var month = String(parsed.getMonth() + 1).padStart(2, '0');
-        var day = String(parsed.getDate()).padStart(2, '0');
-        return parsed.getFullYear() + '-' + month + '-' + day;
+        return parsed.toLocaleDateString('en-CA', { timeZone: PH_TZ });
     }
 
+    // November 27, 2026 (Philippine time)
     function formatDate(value) {
         var parsed = new Date(value);
         return isNaN(parsed.getTime())
             ? 'N/A'
-            : parsed.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            : parsed.toLocaleDateString('en-PH', {
+                timeZone: PH_TZ,
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+    }
+
+    // "22:45" -> "10:45 PM" (o 24-hour kapag USE_12H_TIME = false)
+    function formatTime(value) {
+        var match = /^(\d{1,2}):(\d{2})/.exec(String(value || '').trim());
+
+        if (!match) {
+            return value || '';
+        }
+
+        var hour = Number(match[1]);
+        var minutes = match[2];
+
+        if (!USE_12H_TIME) {
+            return String(hour).padStart(2, '0') + ':' + minutes;
+        }
+
+        var suffix = hour >= 12 ? 'PM' : 'AM';
+        var hour12 = hour % 12 === 0 ? 12 : hour % 12;
+
+        return hour12 + ':' + minutes + ' ' + suffix;
+    }
+
+    // ==================================================
+    // ICONS (inline SVG)
+    // ==================================================
+
+    function svg(path) {
+        return '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" ' +
+            'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+            'stroke-linejoin="round" aria-hidden="true">' + path + '</svg>';
+    }
+
+    var ICONS = {
+        confirm: svg('<path d="M20 6 9 17l-5-5"/>'),
+        reschedule: svg('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>'),
+        complete: svg('<circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/>'),
+        cancel: svg('<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/>')
+    };
+
+    function iconButton(cls, action, id, icon, label) {
+        return '<button type="button" class="' + cls + ' icon-btn" data-action="' + action +
+            '" data-id="' + id + '" title="' + label + '" aria-label="' + label + '" ' +
+            'style="display:inline-flex;align-items:center;justify-content:center;' +
+            'padding:6px 8px;line-height:1;">' + icon + '</button> ';
     }
 
     // ==================================================
@@ -268,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (term) {
-                var haystack = [a.clientName, a.username, a.phone, a.artist, a.tattooType,
+                var haystack = [a.clientName, a.username, a.artist, a.tattooType,
                     a.tattooSize, formatPlacement(a)]
                     .join(' ')
                     .toLowerCase();
@@ -389,11 +440,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (!closed) {
                 if (status === 'Pending') {
-                    actions += '<button type="button" class="confirm-btn" data-action="Confirmed" data-id="' + id + '">Confirm</button> ';
+                    actions += iconButton('confirm-btn', 'Confirmed', id, ICONS.confirm, 'Confirm');
                 }
-                actions += '<button type="button" class="reschedule-btn" data-action="reschedule" data-id="' + id + '">Reschedule</button> ';
-                actions += '<button type="button" class="complete-btn" data-action="Completed" data-id="' + id + '">Complete</button> ';
-                actions += '<button type="button" class="cancel-btn" data-action="Cancelled" data-id="' + id + '">Cancel</button>';
+                actions += iconButton('reschedule-btn', 'reschedule', id, ICONS.reschedule, 'Reschedule');
+                actions += iconButton('complete-btn', 'Completed', id, ICONS.complete, 'Complete');
+                actions += iconButton('cancel-btn', 'Cancelled', id, ICONS.cancel, 'Cancel');
             } else {
                 actions = '&mdash;';
             }
@@ -409,10 +460,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             return '<tr>' +
                 '<td>' + escapeHtml(a.clientName) + '</td>' +
-                '<td>' + escapeHtml(a.phone) + '</td>' +
                 '<td>' + escapeHtml(a.artist) + '</td>' +
                 '<td>' + formatDate(a.date) + '</td>' +
-                '<td>' + escapeHtml(a.time) + '</td>' +
+                '<td>' + escapeHtml(formatTime(a.time)) + '</td>' +
                 '<td>' + escapeHtml(a.tattooType) + '</td>' +
                 '<td>' +
                     '<button type="button" class="size-btn" data-detail-id="' + id + '" ' +

@@ -1,16 +1,4 @@
 // public/js/clientdashboard.js
-//
-// Client page - booking + sariling appointments galing MongoDB.
-//
-// Reference Photo:
-//   - Kapag pumili ang client ng design sa /photos, dadalhin siya sa
-//     /clientdashboard?design=<title>&image=/uploads/photos/xxx.jpg
-//   - KUSA nitong ginagawa ang preview sa tabi ng file input, kahit
-//     hindi mo binago ang clientdashboard.ejs.
-//
-// Endpoints:
-//     GET  /api/appointments        -> sariling appointments
-//     POST /api/appointments        -> booking (multipart + referenceUrl)
 
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -20,14 +8,56 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Presyo ayon sa laki ng tattoo
     var SIZE_PRICES = {
-        Small: 700,
+        Small: 1000,
         Medium: 1500,
         Large: 10000
     };
 
+    // Sukat (inches) na ipinapakita sa tabi ng size
+    var SIZE_DIMENSIONS = {
+        Small: '1 x 1 to 1 x 9 in'
+    };
+
+    // Presyo ayon sa uri ng tattoo (mas mananaig kaysa sa size)
+    var TYPE_PRICES = {
+        Minimalist: 700
+    };
+
+    var TYPE_DIMENSIONS = {
+        Minimalist: '1 x 1 to 1 x 9 in'
+    };
+
+    // Pinakamaliit: 1 x 1 hanggang 1 x 9 inches = 700
+    var SMALLEST_PRICE = 700;
+    var SMALLEST_SHORT_SIDE = 1;
+    var SMALLEST_MIN_LONG_SIDE = 2;
+    var SMALLEST_MAX_LONG_SIDE = 9;
+
+    function isSmallestSize(width, height) {
+        var w = Number(width);
+        var h = Number(height);
+
+        if (!w || !h) {
+            return false;
+        }
+
+        var shortSide = Math.min(w, h);
+        var longSide = Math.max(w, h);
+
+        return shortSide === SMALLEST_SHORT_SIDE &&
+            longSide >= SMALLEST_MIN_LONG_SIDE &&
+            longSide <= SMALLEST_MAX_LONG_SIDE;
+    }
+
     // Custom: bawat square inch
     var CUSTOM_RATE_PER_SQ_INCH = 150;
-    var CUSTOM_MINIMUM = 700;
+    var CUSTOM_MINIMUM = 1000;
+
+    // Oras ng appointment: 8:00 AM hanggang 5:00 PM (Philippine Time)
+    var PH_TIMEZONE = 'Asia/Manila';
+    var OPEN_TIME = '08:00';
+    var CLOSE_TIME = '17:00';
+    var PHONE_LENGTH = 11;
 
     var tableBody = document.getElementById('appointmentsBody');
     var form = document.getElementById('appointmentForm');
@@ -51,6 +81,21 @@ document.addEventListener('DOMContentLoaded', function () {
     var balanceInput = document.getElementById('balance');
     var balanceDisplay = document.getElementById('balanceDisplay');
     var paymentNote = document.getElementById('paymentNote');
+
+    // Hinahanap ang time at phone fields kahit ano ang id
+    var timeInput =
+        document.getElementById('time') ||
+        (form ? form.querySelector('[name="time"]') : null);
+
+    var phoneInput =
+        document.getElementById('contact') ||
+        document.getElementById('phone') ||
+        (form
+            ? form.querySelector(
+                '[name="contact"], [name="phone"], [name="cellphone"], ' +
+                '[name="mobile"], [name="contactNumber"], input[type="tel"]'
+              )
+            : null);
 
     // Hinahanap ang file input kahit ano ang id
     var fileInput =
@@ -102,11 +147,81 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function computeAmount(size, width, height) {
+    // "13:30" -> "1:30 PM"
+    function formatTimeLabel(value) {
+        if (!value) {
+            return '';
+        }
+
+        var parts = value.split(':');
+        var hour = Number(parts[0]);
+        var suffix = hour >= 12 ? 'PM' : 'AM';
+
+        hour = hour % 12;
+
+        if (hour === 0) {
+            hour = 12;
+        }
+
+        return hour + ':' + parts[1] + ' ' + suffix;
+    }
+
+    function isWithinBusinessHours(time) {
+        return Boolean(time) && time >= OPEN_TIME && time <= CLOSE_TIME;
+    }
+
+    // Kasalukuyang petsa at oras sa Pilipinas, kahit ano ang timezone ng device
+    function getPhilippineNow() {
+        var parts = new Intl.DateTimeFormat('en-CA', {
+            timeZone: PH_TIMEZONE,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).formatToParts(new Date());
+
+        function get(type) {
+            return parts.find(function (p) { return p.type === type; }).value;
+        }
+
+        var hour = get('hour') === '24' ? '00' : get('hour');
+
+        return {
+            date: get('year') + '-' + get('month') + '-' + get('day'),
+            time: hour + ':' + get('minute')
+        };
+    }
+
+    // Halimbawa: "Small (2 x 3 in)" o "Minimalist (1 x 2 in)"
+    function describeSize(size, type) {
+        if (type && Object.prototype.hasOwnProperty.call(TYPE_DIMENSIONS, type)) {
+            return type + ' (' + TYPE_DIMENSIONS[type] + ')';
+        }
+
+        if (size && Object.prototype.hasOwnProperty.call(SIZE_DIMENSIONS, size)) {
+            return size + ' (' + SIZE_DIMENSIONS[size] + ')';
+        }
+
+        return size || '';
+    }
+
+    function computeAmount(size, width, height, type) {
+
+        // Minimalist: fixed na 700 (1 x 2 in)
+        if (type && Object.prototype.hasOwnProperty.call(TYPE_PRICES, type)) {
+            return {
+                amount: TYPE_PRICES[type],
+                note: describeSize(size, type) + ' - fixed rate of ' +
+                    formatPeso(TYPE_PRICES[type]) + '.'
+            };
+        }
+
         if (Object.prototype.hasOwnProperty.call(SIZE_PRICES, size)) {
             return {
                 amount: SIZE_PRICES[size],
-                note: size + ' tattoo - fixed rate.'
+                note: describeSize(size, '') + ' tattoo - fixed rate.'
             };
         }
 
@@ -118,6 +233,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 return {
                     amount: 0,
                     note: 'Enter width and height in inches to compute the amount.'
+                };
+            }
+
+            // 1 x 2 hanggang 1 x 9 = 700
+            if (isSmallestSize(w, h)) {
+                return {
+                    amount: SMALLEST_PRICE,
+                    note: w + ' in x ' + h + ' in - smallest size rate (1 x 2 to 1 x 9 in).'
                 };
             }
 
@@ -168,7 +291,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==================================================
-    // ARTIST OPTIONS + MIN DATE
+    // ARTIST OPTIONS + MIN DATE (Philippine date)
     // ==================================================
 
     if (artistSelect && !artistSelect.options.length) {
@@ -178,8 +301,110 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (dateInput) {
-        dateInput.min = toInputDate(new Date());
+        dateInput.min = getPhilippineNow().date;
     }
+
+    // ==================================================
+    // SIZE OPTIONS - ipakita ang sukat, hal. "Small (2 x 3 in)"
+    // ==================================================
+
+    (function labelSizeOptions() {
+        if (!sizeSelect) {
+            return;
+        }
+
+        for (var i = 0; i < sizeSelect.options.length; i++) {
+            var option = sizeSelect.options[i];
+
+            if (Object.prototype.hasOwnProperty.call(SIZE_DIMENSIONS, option.value)) {
+                option.textContent = describeSize(option.value, '');
+            }
+        }
+    })();
+
+    // ==================================================
+    // APPOINTMENT TIME - 8:00 AM hanggang 5:00 PM lang
+    // Ginagawang dropdown kusa para walang 12 AM - 7 AM na option.
+    // Laging 8:00 AM ang default.
+    // ==================================================
+
+    function setupTimeField() {
+        if (!timeInput) {
+            return;
+        }
+
+        if (timeInput.tagName !== 'SELECT') {
+            var select = document.createElement('select');
+
+            select.id = timeInput.id;
+            select.name = timeInput.name || 'time';
+            select.className = timeInput.className;
+            select.required = true;
+
+            timeInput.parentNode.replaceChild(select, timeInput);
+            timeInput = select;
+        }
+
+        var html = '';
+
+        for (var m = 8 * 60; m <= 17 * 60; m += 30) {
+            var value = String(Math.floor(m / 60)).padStart(2, '0') + ':' +
+                String(m % 60).padStart(2, '0');
+
+            html += '<option value="' + value + '">' + formatTimeLabel(value) + '</option>';
+        }
+
+        timeInput.innerHTML = html;
+        timeInput.value = OPEN_TIME;
+    }
+
+    function resetTimeToOpening() {
+        if (timeInput) {
+            timeInput.value = OPEN_TIME;
+        }
+    }
+
+    setupTimeField();
+
+    // Pagbukas ng booking modal, 8:00 AM agad
+    if (typeof window.openAppointmentModal === 'function') {
+        var originalOpenModal = window.openAppointmentModal;
+
+        window.openAppointmentModal = function () {
+            var result = originalOpenModal.apply(this, arguments);
+            resetTimeToOpening();
+            return result;
+        };
+    }
+
+    // ==================================================
+    // CELLPHONE NUMBER - numbers lang, 11 digits
+    // ==================================================
+
+    function setupPhoneField() {
+        if (!phoneInput) {
+            return;
+        }
+
+        phoneInput.type = 'tel';
+        phoneInput.maxLength = PHONE_LENGTH;
+        phoneInput.minLength = PHONE_LENGTH;
+        phoneInput.pattern = '[0-9]{' + PHONE_LENGTH + '}';
+        phoneInput.inputMode = 'numeric';
+        phoneInput.required = true;
+
+        if (!phoneInput.placeholder) {
+            phoneInput.placeholder = '09XXXXXXXXX';
+        }
+
+        phoneInput.addEventListener('input', function () {
+            phoneInput.value = phoneInput.value
+                .replace(/\D/g, '')
+                .slice(0, PHONE_LENGTH);
+        });
+    }
+
+    setupPhoneField();
 
     // ==================================================
     // TATTOO SIZE -> AUTOMATIC NA HALAGA
@@ -191,6 +416,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         var size = sizeSelect.value;
+        var type = tattooTypeSelect ? tattooTypeSelect.value : '';
         var isCustom = size === 'Custom';
 
         if (customSizeRow) {
@@ -210,7 +436,8 @@ document.addEventListener('DOMContentLoaded', function () {
         var result = computeAmount(
             size,
             widthInput ? widthInput.value : '',
-            heightInput ? heightInput.value : ''
+            heightInput ? heightInput.value : '',
+            type
         );
 
         amountInput.value = result.amount.toFixed(2);
@@ -220,11 +447,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (amountNote) {
-            amountNote.textContent = tattooTypeSelect &&
-                FIXED_SIZE_BY_TYPE[tattooTypeSelect.value]
-                ? tattooTypeSelect.value + ' is always ' +
-                    FIXED_SIZE_BY_TYPE[tattooTypeSelect.value] + ' - ' + result.note
-                : result.note;
+            amountNote.textContent = result.note;
         }
 
         refreshBalance(result.amount);
@@ -288,10 +511,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // ==================================================
-    // MINIMALIST - laging Small (fixed na 700)
-    // ==================================================
-
+    // Minimalist: naka-fixed ang size (Small) at ang presyo ay 700
     var FIXED_SIZE_BY_TYPE = {
         Minimalist: 'Small'
     };
@@ -306,7 +526,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (fixed) {
             sizeSelect.value = fixed;
             sizeSelect.disabled = true;
-            sizeSelect.title = tattooTypeSelect.value + ' tattoos are always ' + fixed + '.';
+            sizeSelect.title = describeSize(fixed, tattooTypeSelect.value) +
+                ' is a fixed size and rate.';
         } else {
             sizeSelect.disabled = false;
             sizeSelect.title = '';
@@ -498,6 +719,8 @@ document.addEventListener('DOMContentLoaded', function () {
             modal.style.display = 'flex';
             modal.classList.add('active', 'show');
         }
+
+        resetTimeToOpening();
     }
 
     (function applyDesignFromUrl() {
@@ -535,7 +758,7 @@ document.addEventListener('DOMContentLoaded', function () {
             var sizeValue = a.tattooSize || a.size ||
                 FIXED_SIZE_BY_TYPE[a.tattooType] || '';
 
-            var size = sizeValue || 'N/A';
+            var size = describeSize(sizeValue, a.tattooType) || 'N/A';
 
             if (sizeValue === 'Custom' && a.customWidth && a.customHeight) {
                 size = 'Custom (' + a.customWidth + ' x ' + a.customHeight + ' in)';
@@ -557,7 +780,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 amount = computeAmount(
                     sizeValue,
                     a.customWidth,
-                    a.customHeight
+                    a.customHeight,
+                    a.tattooType
                 ).amount;
             }
 
@@ -743,6 +967,32 @@ document.addEventListener('DOMContentLoaded', function () {
 
             var due = refreshAmount();
 
+            // Cellphone: eksaktong 11 digits
+            if (phoneInput && !/^\d{11}$/.test(phoneInput.value.trim())) {
+                alert('Cellphone number must be exactly ' + PHONE_LENGTH + ' digits.');
+                phoneInput.focus();
+                return;
+            }
+
+            // Oras: 8:00 AM hanggang 5:00 PM lang
+            var timeValue = timeInput ? timeInput.value : '';
+
+            if (timeInput && !isWithinBusinessHours(timeValue)) {
+                alert('Appointments are only available from 8:00 AM to 5:00 PM (Philippine Time).');
+                return;
+            }
+
+            // Hindi puwede ang petsa/oras na lumipas na (Philippine Time)
+            if (dateInput && dateInput.value && timeInput) {
+                var now = getPhilippineNow();
+
+                if (dateInput.value < now.date ||
+                    (dateInput.value === now.date && timeValue <= now.time)) {
+                    alert('Please choose a date and time that has not passed yet (Philippine Time).');
+                    return;
+                }
+            }
+
             if (due <= 0) {
                 alert('Please choose a tattoo size (and inches for a custom size) first.');
                 return;
@@ -800,6 +1050,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     form.reset();
                     clearChosenDesign();
+                    resetTimeToOpening();
                     applyTypeFixedSize();
                     refreshBalance();
 

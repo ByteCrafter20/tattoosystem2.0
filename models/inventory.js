@@ -20,6 +20,13 @@ const inventorySchema = new mongoose.Schema({
         min: 0
     },
 
+    // Low Stock Alert: Low Stock na kapag quantity <= reorderLevel
+    reorderLevel: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+
     createdAt: {
         type: Date,
         default: Date.now
@@ -34,7 +41,7 @@ inventorySchema.virtual("status").get(function () {
         return "Out of Stock";
     }
 
-    if (this.quantity <= this.reorderLevel) {
+    if (this.quantity <= (this.reorderLevel || 0)) {
         return "Low Stock";
     }
 

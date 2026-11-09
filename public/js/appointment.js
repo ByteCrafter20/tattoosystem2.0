@@ -1,5 +1,6 @@
 // ======================================================
 // APPOINTMENTS - loaded from MongoDB via /api/appointments
+// Allowed appointment hours: 8:00 AM to 5:00 PM (Philippine Time)
 // ======================================================
 
 let appointments = [];
@@ -16,6 +17,60 @@ const dateFilter = document.getElementById('dateFilter');
 // ======================================================
 // HELPERS
 // ======================================================
+
+const PH_TIMEZONE = 'Asia/Manila';
+const OPEN_TIME = '08:00';
+const CLOSE_TIME = '17:00';
+
+function isWithinBusinessHours(time) {
+    return Boolean(time) && time >= OPEN_TIME && time <= CLOSE_TIME;
+}
+
+// Fills a <select> with time slots from 8:00 AM to 5:00 PM only (no 12 AM to 7 AM options)
+function populateTimeOptions(select, stepMinutes) {
+
+    const step = stepMinutes || 30;
+    const startMinutes = 8 * 60;
+    const endMinutes = 17 * 60;
+
+    let html = '';
+
+    for (let m = startMinutes; m <= endMinutes; m += step) {
+
+        const hh = String(Math.floor(m / 60)).padStart(2, '0');
+        const mm = String(m % 60).padStart(2, '0');
+        const value = hh + ':' + mm;
+
+        html += '<option value="' + value + '">' + formatTime(value) + '</option>';
+    }
+
+    select.innerHTML = html;
+}
+
+// Current date and time in the Philippines, regardless of the device's timezone
+function getPhilippineNow() {
+
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: PH_TIMEZONE,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    }).formatToParts(new Date());
+
+    const get = function (type) {
+        return parts.find(function (p) { return p.type === type; }).value;
+    };
+
+    const hour = get('hour') === '24' ? '00' : get('hour');
+
+    return {
+        date: get('year') + '-' + get('month') + '-' + get('day'),
+        time: hour + ':' + get('minute')
+    };
+}
 
 function escapeHtml(value) {
     return String(value == null ? '' : value)
@@ -253,8 +308,23 @@ function openReschedule(button) {
 
     document.getElementById('modalClient').textContent = row.dataset.client;
     document.getElementById('modalArtist').textContent = row.dataset.artist;
-    document.getElementById('newDate').value = row.dataset.date;
-    document.getElementById('newTime').value = row.dataset.time;
+
+    const newDate = document.getElementById('newDate');
+    newDate.min = getPhilippineNow().date;
+    newDate.value = row.dataset.date;
+
+    const newTime = document.getElementById('newTime');
+
+    if (newTime.tagName === 'SELECT') {
+        populateTimeOptions(newTime, 30);
+    } else {
+        newTime.min = OPEN_TIME;
+        newTime.max = CLOSE_TIME;
+    }
+
+    // Always start at 8:00 AM when the modal opens; the user adjusts from there
+    newTime.value = OPEN_TIME;
+
     document.getElementById('conflictMessage').textContent = '';
 
     const modal = document.getElementById('rescheduleModal');
@@ -278,14 +348,28 @@ document.getElementById('rescheduleForm').addEventListener('submit', async funct
     const conflictMessage = document.getElementById('conflictMessage');
     conflictMessage.textContent = '';
 
+    const newDateValue = document.getElementById('newDate').value;
+    const newTimeValue = document.getElementById('newTime').value;
+    const now = getPhilippineNow();
+
+    if (!isWithinBusinessHours(newTimeValue)) {
+        conflictMessage.textContent = 'Appointments are only available from 8:00 AM to 5:00 PM (Philippine Time).';
+        return;
+    }
+
+    if (newDateValue < now.date || (newDateValue === now.date && newTimeValue <= now.time)) {
+        conflictMessage.textContent = 'Please choose a date and time that has not passed yet (Philippine Time).';
+        return;
+    }
+
     try {
 
         const response = await fetch('/api/clientappointment/' + rescheduleId + '/reschedule', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                date: document.getElementById('newDate').value,
-                time: document.getElementById('newTime').value
+                date: newDateValue,
+                time: newTimeValue
             })
         });
 

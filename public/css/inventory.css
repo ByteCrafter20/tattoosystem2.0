@@ -1,3 +1,7 @@
+:root {
+    --accent: #e63946;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -10,7 +14,12 @@ body {
     color: #222;
 }
 
+/* ===== NAVBAR (STICKY - laging nasa taas habang nag-scroll) ===== */
 .navbar {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 100;
     width: 100%;
     height: 70px;
     background-color: #111111;
@@ -420,6 +429,7 @@ tr:hover {
 }
 
 @media (max-width: 850px) {
+    /* sticky pa rin (galing sa base rule), top: 0 */
     .navbar {
         height: auto;
         padding: 20px;
@@ -454,6 +464,7 @@ tr:hover {
 
     /* Navbar: simple bar with only the logo */
     .navbar {
+        position: -webkit-sticky;
         position: sticky;
         top: 0;
         z-index: 100;
