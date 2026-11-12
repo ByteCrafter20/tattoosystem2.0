@@ -1,32 +1,32 @@
 // public/js/hamburger.js
 (function () {
-    document.addEventListener('DOMContentLoaded', function () {
+    console.log('hamburger.js loaded');
+
+    function init() {
         var btn = document.getElementById('hamburgerBtn');
         var overlay = document.getElementById('mobileMenu');
-        if (!btn || !overlay) return;
+
+        if (!btn || !overlay) {
+            console.warn('hamburger: hindi nahanap ang #hamburgerBtn o #mobileMenu');
+            return;
+        }
 
         function setOpen(isOpen) {
             btn.classList.toggle('open', isOpen);
             overlay.classList.toggle('open', isOpen);
-            document.body.classList.toggle('menu-open', isOpen); // para sa dim backdrop
+            document.body.classList.toggle('menu-open', isOpen);
             btn.setAttribute('aria-expanded', String(isOpen));
         }
 
         // Hamburger: buksan / isara
-        btn.addEventListener('click', function () {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
             setOpen(!overlay.classList.contains('open'));
         });
 
-        // Pindot sa link sa loob ng menu = isara
+        // Pindot sa link o sa labas ng panel (sa overlay) = isara
         overlay.addEventListener('click', function (e) {
             if (e.target.closest('a') || e.target === overlay) setOpen(false);
-        });
-
-        // Pindot sa puting area (labas ng menu at ng hamburger) = isara
-        document.addEventListener('click', function (e) {
-            if (!overlay.classList.contains('open')) return;
-            if (overlay.contains(e.target) || btn.contains(e.target)) return;
-            setOpen(false);
         });
 
         // Esc = isara
@@ -38,5 +38,12 @@
         window.addEventListener('resize', function () {
             if (window.innerWidth > 768) setOpen(false);
         });
-    });
+    }
+
+    // Gumagana kahit na-load na ang page bago tumakbo ang script
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 })();

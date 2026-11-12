@@ -17,15 +17,9 @@
     --shadow-md: 0 8px 22px rgba(16, 24, 40, 0.12);
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-html {
-    scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
     font-family: "Segoe UI", Roboto, Arial, Helvetica, sans-serif;
@@ -55,9 +49,8 @@ body::before {
 }
 
 /* ======================================================
-   NAVBAR (STICKY - laging nasa taas habang nag-scroll)
+   NAVBAR
    ====================================================== */
-
 .navbar {
     position: -webkit-sticky;
     position: sticky;
@@ -75,7 +68,6 @@ body::before {
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
-/* ===== LOGO + BUSINESS NAME ===== */
 .logo {
     display: flex;
     align-items: center;
@@ -94,9 +86,7 @@ body::before {
     border: 2px solid rgba(255, 255, 255, 0.15);
 }
 
-.logo span {
-    color: var(--accent);
-}
+.logo span { color: var(--accent); }
 
 .nav-links {
     display: flex;
@@ -105,9 +95,7 @@ body::before {
     list-style: none;
 }
 
-.nav-links li {
-    display: inline-block;
-}
+.nav-links li { display: inline-block; }
 
 .nav-links a {
     display: block;
@@ -152,7 +140,6 @@ body::before {
 /* ======================================================
    LAYOUT
    ====================================================== */
-
 .container {
     width: 100%;
     max-width: 1440px;
@@ -162,7 +149,6 @@ body::before {
     z-index: 1;
 }
 
-/* Legacy blocks (other pages) */
 .welcome,
 .cards,
 .appointment-box,
@@ -179,15 +165,8 @@ body::before {
     box-shadow: var(--shadow-sm);
 }
 
-.welcome h1 {
-    font-size: 30px;
-    margin-bottom: 6px;
-}
-
-.welcome p {
-    color: var(--muted);
-    font-size: 15px;
-}
+.welcome h1 { font-size: 30px; margin-bottom: 6px; }
+.welcome p { color: var(--muted); font-size: 15px; }
 
 .cards {
     display: grid;
@@ -206,15 +185,8 @@ body::before {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
-}
-
-.card-icon {
-    font-size: 30px;
-    margin-bottom: 15px;
-}
+.card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.card-icon { font-size: 30px; margin-bottom: 15px; }
 
 .card h3 {
     color: var(--muted);
@@ -225,10 +197,7 @@ body::before {
     margin-bottom: 10px;
 }
 
-.card-number {
-    font-size: 28px;
-    font-weight: 700;
-}
+.card-number { font-size: 28px; font-weight: 700; }
 
 .appointment-box {
     padding: 24px;
@@ -244,9 +213,7 @@ body::before {
     margin-bottom: 20px;
 }
 
-.appointment-header h2 {
-    font-size: 20px;
-}
+.appointment-header h2 { font-size: 20px; }
 
 .view-btn {
     background-color: var(--accent);
@@ -259,18 +226,12 @@ body::before {
     transition: background-color 0.2s ease;
 }
 
-.view-btn:hover {
-    background-color: var(--accent-dark);
-}
+.view-btn:hover { background-color: var(--accent-dark); }
 
 /* ===== GENERIC TABLE ===== */
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
+table { width: 100%; border-collapse: collapse; }
 
-th,
-td {
+th, td {
     padding: 14px 15px;
     text-align: left;
     border-bottom: 1px solid var(--line);
@@ -285,13 +246,8 @@ th {
     letter-spacing: 0.6px;
 }
 
-td {
-    font-size: 14px;
-}
-
-tbody tr:hover {
-    background-color: #fff5f6;
-}
+td { font-size: 14px; }
+tbody tr:hover { background-color: #fff5f6; }
 
 .confirmed {
     display: inline-block;
@@ -306,7 +262,6 @@ tbody tr:hover {
 /* ======================================================
    DASHBOARD OVERVIEW
    ====================================================== */
-
 .page-header {
     display: flex;
     align-items: flex-start;
@@ -316,11 +271,7 @@ tbody tr:hover {
     margin-bottom: 26px;
 }
 
-.page-heading h1 {
-    font-size: 30px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-}
+.page-heading h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; }
 
 .page-heading p {
     margin-top: 6px;
@@ -329,12 +280,7 @@ tbody tr:hover {
     max-width: 620px;
 }
 
-.page-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
+.page-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 .date-chip,
 .ghost-btn,
@@ -356,9 +302,7 @@ tbody tr:hover {
     box-shadow: var(--shadow-sm);
 }
 
-.ghost-btn:hover {
-    border-color: #c8cbd1;
-}
+.ghost-btn:hover { border-color: #c8cbd1; }
 
 .primary-btn {
     background: var(--ink);
@@ -366,10 +310,7 @@ tbody tr:hover {
     border: 1px solid var(--ink);
 }
 
-.primary-btn:hover {
-    background: var(--accent);
-    border-color: var(--accent);
-}
+.primary-btn:hover { background: var(--accent); border-color: var(--accent); }
 
 .dashboard-grid {
     display: grid;
@@ -420,10 +361,7 @@ tbody tr:hover {
     background: var(--accent);
 }
 
-.overview-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
-}
+.overview-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
 
 .overview-label {
     display: flex;
@@ -452,19 +390,10 @@ tbody tr:hover {
     font-weight: 600;
 }
 
-.delta.up {
-    background: #e7f7ec;
-    color: #12783f;
-}
+.delta.up { background: #e7f7ec; color: #12783f; }
+.delta.down { background: #fdeaea; color: #c0392b; }
 
-.delta.down {
-    background: #fdeaea;
-    color: #c0392b;
-}
-
-.panel {
-    padding: 22px;
-}
+.panel { padding: 22px; }
 
 .panel-header {
     display: flex;
@@ -500,15 +429,10 @@ tbody tr:hover {
     transition: color 0.2s ease;
 }
 
-.panel-link:hover {
-    color: var(--accent);
-}
+.panel-link:hover { color: var(--accent); }
 
 /* ===== CHART ===== */
-.chart svg {
-    width: 100%;
-    height: 220px;
-}
+.chart svg { width: 100%; height: 220px; }
 
 .chart-line {
     fill: none;
@@ -527,7 +451,7 @@ tbody tr:hover {
     font-size: 12px;
 }
 
-/* ===== BOOKING INSIGHTS (filled by dashboard.js) ===== */
+/* ===== BOOKING INSIGHTS ===== */
 #bookingInsight {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
@@ -562,7 +486,7 @@ tbody tr:hover {
     line-height: 1.2;
 }
 
-/* ===== COMPACT TABLE (New Bookings Feed) ===== */
+/* ===== COMPACT TABLE ===== */
 .appointments-table th {
     background: transparent;
     border-bottom: 1px solid var(--line);
@@ -579,14 +503,9 @@ tbody tr:hover {
     vertical-align: top;
 }
 
-.appointments-table tbody tr:last-child td {
-    border-bottom: none;
-}
+.appointments-table tbody tr:last-child td { border-bottom: none; }
 
-.muted {
-    color: var(--faint);
-    font-size: 12px;
-}
+.muted { color: var(--faint); font-size: 12px; }
 
 .status-badge {
     display: inline-block;
@@ -597,25 +516,10 @@ tbody tr:hover {
     white-space: nowrap;
 }
 
-.status-confirmed {
-    background: #e7f7ec;
-    color: #12783f;
-}
-
-.status-pending {
-    background: #fff5e0;
-    color: #92610a;
-}
-
-.status-completed {
-    background: #eef2ff;
-    color: #3730a3;
-}
-
-.status-cancelled {
-    background: #fdeaea;
-    color: #c0392b;
-}
+.status-confirmed { background: #e7f7ec; color: #12783f; }
+.status-pending { background: #fff5e0; color: #92610a; }
+.status-completed { background: #eef2ff; color: #3730a3; }
+.status-cancelled { background: #fdeaea; color: #c0392b; }
 
 .no-records {
     color: var(--faint);
@@ -624,7 +528,7 @@ tbody tr:hover {
     padding: 20px 0;
 }
 
-/* ===== UPCOMING APPOINTMENTS LIST ===== */
+/* ===== UPCOMING LIST ===== */
 .appointment-list,
 #upcomingList {
     list-style: none;
@@ -652,35 +556,15 @@ tbody tr:hover {
     box-shadow: var(--shadow-sm);
 }
 
-.appointment-list li > div {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
-.upcoming-item strong {
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.upcoming-item span {
-    color: var(--muted);
-    font-size: 12px;
-}
-
-.upcoming-item .status-badge {
-    margin-left: auto;
-}
-
-.appointment-title {
-    font-size: 13px;
-    font-weight: 600;
-}
+.appointment-list li > div { display: flex; flex-direction: column; gap: 3px; }
+.upcoming-item strong { font-size: 13px; font-weight: 600; }
+.upcoming-item span { color: var(--muted); font-size: 12px; }
+.upcoming-item .status-badge { margin-left: auto; }
+.appointment-title { font-size: 13px; font-weight: 600; }
 
 /* ======================================================
    TATTOO GALLERY
    ====================================================== */
-
 .dashboard-main {
     max-width: 1440px;
     margin: 0 auto;
@@ -740,9 +624,7 @@ tbody tr:hover {
     transition: transform 0.4s ease;
 }
 
-.gallery-item:hover img {
-    transform: scale(1.04);
-}
+.gallery-item:hover img { transform: scale(1.04); }
 
 .gallery-item figcaption {
     padding: 12px 14px;
@@ -753,7 +635,6 @@ tbody tr:hover {
     letter-spacing: 0.3px;
 }
 
-/* Category dropdown inside a gallery card */
 .gallery-item label {
     display: block;
     padding: 10px 14px 0;
@@ -789,7 +670,6 @@ tbody tr:hover {
 /* ======================================================
    TABLE THUMBNAIL
    ====================================================== */
-
 td img,
 .thumb,
 .ref-thumb {
@@ -804,9 +684,7 @@ td img,
     cursor: pointer;
 }
 
-#imageModal .modal-content {
-    max-width: 520px;
-}
+#imageModal .modal-content { max-width: 520px; }
 
 #imagePreview {
     display: block;
@@ -819,118 +697,45 @@ td img,
 /* ======================================================
    RESPONSIVE
    ====================================================== */
-
 @media (max-width: 1200px) {
-
-    .navbar {
-        padding: 0 20px;
-    }
-
-    .nav-links a {
-        padding: 10px 9px;
-        font-size: 13px;
-    }
-
-    .cards {
-        grid-template-columns: repeat(2, 1fr);
-    }
+    .navbar { padding: 0 20px; }
+    .nav-links a { padding: 10px 9px; font-size: 13px; }
+    .cards { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 1100px) {
-
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-    }
+    .dashboard-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 850px) {
-
-    /* FIX: dating "relative" - ginawang sticky para hindi mawala sa scroll */
-    .navbar {
-        position: -webkit-sticky;
-        position: sticky;
-        top: 0;
-        height: auto;
-        padding: 18px 20px;
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    .nav-links {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    .admin {
-        display: none;
-    }
-
-    .container {
-        padding: 24px 20px;
-    }
+    .admin { display: none; }
+    .container { padding: 24px 20px; }
 }
 
 @media (max-width: 600px) {
-
     .cards,
-    .dashboard-overview {
-        grid-template-columns: 1fr;
-    }
-
-    .container {
-        padding: 20px;
-    }
-
-    .logo {
-        font-size: 20px;
-    }
-
+    .dashboard-overview { grid-template-columns: 1fr; }
+    .container { padding: 20px; }
     .welcome h1,
-    .page-heading h1 {
-        font-size: 25px;
-    }
-
-    .appointment-box {
-        overflow-x: auto;
-    }
-
-    table {
-        min-width: 700px;
-    }
-
-    .appointments-table {
-        min-width: 0;
-    }
-
-    .dashboard-main {
-        padding: 10px 16px 40px;
-    }
-
-    .gallery-item img {
-        height: 180px;
-    }
+    .page-heading h1 { font-size: 25px; }
+    .appointment-box { overflow-x: auto; }
+    table { min-width: 700px; }
+    .appointments-table { min-width: 0; }
+    .dashboard-main { padding: 10px 16px 40px; }
+    .gallery-item img { height: 180px; }
 }
 
 /* ======================================================
    MOBILE HAMBURGER MENU
    ====================================================== */
-
 .hamburger,
-.mobile-menu {
-    display: none;
-}
+.mobile-menu { display: none; }
 
 @media (max-width: 768px) {
 
-<<<<<<< HEAD
-    /* FIX: dating "relative" - ginawang sticky */
+    /* Navbar: isang row, sticky */
     .navbar {
         position: -webkit-sticky;
-        position: sticky;
-        top: 0;
-=======
-    /* Navbar: pareho sa ibang pages (isang row, logo sa kaliwa, sticky) */
-    .navbar {
         position: sticky;
         top: 0;
         height: 70px;
@@ -939,24 +744,16 @@ td img,
         gap: 0;
     }
 
-    /* Logo: pareho ang laki sa ibang pages */
-    .logo {
-        gap: 12px;
-        font-size: 17px;
-    }
+    .logo { gap: 12px; font-size: 17px; }
+    .logo img { height: 45px; }
 
-    .logo img {
-        height: 45px;
->>>>>>> f0f2242d6e770d212718ceacb8d844566c665ab8
-    }
+    /* Itago ang buong links sa mobile */
+    .navbar .nav-links { display: none !important; }
 
-    .navbar .nav-links {
-        display: none;
-    }
-
-    /* Button: right side, just below the navbar */
+    /* Hamburger: right corner, sa ibaba ng navbar */
+    .navbar .hamburger,
     .hamburger {
-        display: flex;
+        display: flex !important;
         position: absolute;
         top: 100%;
         right: 12px;
@@ -972,9 +769,11 @@ td img,
         border: 2px solid #000000;
         border-radius: 8px;
         cursor: pointer;
+        z-index: 101;
     }
 
     .hamburger span {
+        display: block;
         width: 24px;
         height: 3px;
         background: #000000;
@@ -986,12 +785,12 @@ td img,
     .hamburger.open span:nth-child(2) { opacity: 0; }
     .hamburger.open span:nth-child(3) { transform: translateY(-9px) rotate(-45deg); }
 
-    /* Full-screen invisible layer (tap outside to close). No blur here. */
+    /* Full-screen layer (tap outside to close) */
     .mobile-menu {
         display: block;
         position: fixed;
         inset: 0;
-        z-index: 99;               /* below the navbar (z-index 100) so the button stays clickable */
+        z-index: 99;
         background: transparent;
         opacity: 0;
         visibility: hidden;
@@ -1006,52 +805,33 @@ td img,
         transition: opacity 0.5s ease, visibility 0s;
     }
 
-    /* Panel in the right corner, links vertical and right-aligned */
+    /* Panel sa right corner */
     .mobile-menu ul {
         position: absolute;
         top: 0;
         right: 0;
         width: min(280px, 80%);
         height: 100%;
-        padding: 170px 24px 24px;  /* pushes links below the hamburger button */
+        padding: 170px 24px 24px;
         list-style: none;
         display: flex;
         flex-direction: column;
         align-items: flex-end;
-        gap: 20px;
+        gap: 14px;
         background: rgba(13, 13, 14, 0.97);
         border-left: 3px solid var(--accent);
     }
 
-    /* Only the letters blur, then become sharp */
-    .mobile-menu a {
-        color: #ffffff;
-        text-decoration: none;
-        font-size: 1.2rem;
-        opacity: 0;
-        filter: blur(10px);
-        transform: translateX(16px);
-        transition: opacity 0.7s ease, filter 0.7s ease, transform 0.7s ease;
-    }
-
-    .mobile-menu a.active {
-        color: var(--accent);
-    }
-
-        /* ===== Menu buttons (boxed) ===== */
-    .mobile-menu ul {
-        gap: 14px;                 /* mas siksik kasi may box na */
-    }
-
-    .mobile-menu li {
-        width: 100%;
-    }
+    .mobile-menu li { width: 100%; }
 
     .mobile-menu a {
         display: block;
         width: 100%;
         padding: 14px 18px;
         text-align: right;
+        color: #ffffff;
+        text-decoration: none;
+        font-size: 1.2rem;
         font-weight: 500;
         letter-spacing: 0.3px;
         background: rgba(255, 255, 255, 0.04);
@@ -1059,6 +839,9 @@ td img,
         border-radius: 10px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
         -webkit-tap-highlight-color: transparent;
+        opacity: 0;
+        filter: blur(10px);
+        transform: translateX(16px);
         transition:
             opacity 0.7s ease,
             filter 0.7s ease,
@@ -1069,7 +852,12 @@ td img,
             box-shadow 0.25s ease;
     }
 
-    /* Hover (desktop/tablet) at press (touch) */
+    .mobile-menu.open a {
+        opacity: 1;
+        filter: blur(0);
+        transform: translateX(0);
+    }
+
     .mobile-menu.open a:hover,
     .mobile-menu.open a:active,
     .mobile-menu.open a:focus-visible {
@@ -1078,21 +866,14 @@ td img,
         border-color: var(--accent);
         box-shadow: 0 6px 16px rgba(230, 57, 70, 0.25);
         transform: translateX(-6px);
-        transition-delay: 0s;      /* cancel yung staggered entrance delay */
+        transition-delay: 0s;
         outline: none;
     }
 
-    /* Active page: red na box */
     .mobile-menu a.active {
         color: var(--accent);
         background: rgba(230, 57, 70, 0.12);
         border-color: var(--accent);
-    }
-
-    .mobile-menu.open a {
-        opacity: 1;
-        filter: blur(0);
-        transform: translateX(0);
     }
 
     .mobile-menu li:nth-child(2) a { transition-delay: 0.08s; }

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/dashboard.css">
+
     <title>Tattoo Home-Based Management System</title>
 </head>
 
@@ -27,8 +28,8 @@
 
         <!-- Mobile hamburger (below the navbar, right side) -->
         <button id="hamburgerBtn" class="hamburger" type="button"
-                aria-label="Toggle menu" aria-expanded="false" aria-controls="mobileMenu">
-            <span></span><span></span><span></span>
+        aria-label="Toggle menu" aria-expanded="false" aria-controls="mobileMenu">
+        <span></span><span></span><span></span>
         </button>
     </nav>
 
@@ -396,5 +397,42 @@
     </main>
 
     <script src="/js/dashboard.js"></script>
+    <script>
+        (function () {
+            var btn = document.getElementById('hamburgerBtn');
+            var menu = document.getElementById('mobileMenu');
+            if (!btn || !menu) return;
+    
+            function setOpen(open) {
+                btn.classList.toggle('open', open);
+                menu.classList.toggle('open', open);
+                btn.setAttribute('aria-expanded', String(open));
+            }
+    
+            // Capture phase: mauuna ito sa lahat ng ibang handler, at haharangin
+            // ang mga duplicate na script para hindi mag-toggle ng dalawang beses.
+            document.addEventListener('click', function (e) {
+                if (btn.contains(e.target)) {
+                    e.stopImmediatePropagation();
+                    e.preventDefault();
+                    setOpen(!menu.classList.contains('open'));
+                    return;
+                }
+                // Pindot sa link o sa labas ng panel = isara
+                if (menu.classList.contains('open') &&
+                    (e.target === menu || e.target.closest('#mobileMenu a'))) {
+                    setOpen(false);
+                }
+            }, true);
+    
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') setOpen(false);
+            });
+    
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 768) setOpen(false);
+            });
+        })();
+        </script>
 </body>
 </html>
