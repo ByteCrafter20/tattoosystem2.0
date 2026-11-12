@@ -12,6 +12,7 @@ const noAppointments = document.getElementById('noAppointments');
 const searchInput = document.getElementById('searchInput');
 const statusFilter = document.getElementById('statusFilter');
 const dateFilter = document.getElementById('dateFilter');
+const rescheduleForm = document.getElementById('rescheduleForm');
 
 
 // ======================================================
@@ -22,11 +23,34 @@ const PH_TIMEZONE = 'Asia/Manila';
 const OPEN_TIME = '08:00';
 const CLOSE_TIME = '17:00';
 
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.textContent = value;
+    }
+}
+
+function showModal(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.classList.add('show');
+        el.style.display = 'flex';
+    }
+}
+
+function hideModal(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.classList.remove('show');
+        el.style.display = 'none';
+    }
+}
+
 function isWithinBusinessHours(time) {
     return Boolean(time) && time >= OPEN_TIME && time <= CLOSE_TIME;
 }
 
-// Fills a <select> with time slots from 8:00 AM to 5:00 PM only (no 12 AM to 7 AM options)
+// Fills a <select> with time slots from 8:00 AM to 5:00 PM only
 function populateTimeOptions(select, stepMinutes) {
 
     const step = stepMinutes || 30;
@@ -122,16 +146,14 @@ function formatTime(value) {
 
 function showMessage(title, text, isError) {
 
-    document.getElementById('messageIcon').textContent = isError ? '!' : '✓';
-    document.getElementById('messageTitle').textContent = title;
-    document.getElementById('messageText').textContent = text;
-    document.getElementById('messageModal').classList.add('show');
-    document.getElementById('messageModal').style.display = 'flex';
+    setText('messageIcon', isError ? '!' : '✓');
+    setText('messageTitle', title);
+    setText('messageText', text);
+    showModal('messageModal');
 }
 
 function closeMessage() {
-    document.getElementById('messageModal').classList.remove('show');
-    document.getElementById('messageModal').style.display = 'none';
+    hideModal('messageModal');
 }
 
 
@@ -140,6 +162,10 @@ function closeMessage() {
 // ======================================================
 
 async function loadAppointments() {
+
+    if (!tableBody) {
+        return;
+    }
 
     try {
 
@@ -159,8 +185,11 @@ async function loadAppointments() {
         console.error('Load appointments error:', error);
 
         tableBody.innerHTML = '';
-        noAppointments.textContent = 'Could not load appointments from the server.';
-        noAppointments.style.display = 'block';
+
+        if (noAppointments) {
+            noAppointments.textContent = 'Could not load appointments from the server.';
+            noAppointments.style.display = 'block';
+        }
     }
 }
 
@@ -171,9 +200,9 @@ async function loadAppointments() {
 
 function getFiltered() {
 
-    const search = searchInput.value.trim().toLowerCase();
-    const status = statusFilter.value;
-    const date = dateFilter.value;
+    const search = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    const status = statusFilter ? statusFilter.value : 'all';
+    const date = dateFilter ? dateFilter.value : '';
 
     return appointments.filter(function (item) {
 
@@ -195,18 +224,29 @@ function getFiltered() {
 
 function renderAppointments() {
 
-    const rows = getFiltered();
-
-    totalBox.textContent = rows.length;
-
-    if (rows.length === 0) {
-        tableBody.innerHTML = '';
-        noAppointments.textContent = 'No appointments found.';
-        noAppointments.style.display = 'block';
+    if (!tableBody) {
         return;
     }
 
-    noAppointments.style.display = 'none';
+    const rows = getFiltered();
+
+    if (totalBox) {
+        totalBox.textContent = rows.length;
+    }
+
+    if (rows.length === 0) {
+        tableBody.innerHTML = '';
+
+        if (noAppointments) {
+            noAppointments.textContent = 'No appointments found.';
+            noAppointments.style.display = 'block';
+        }
+        return;
+    }
+
+    if (noAppointments) {
+        noAppointments.style.display = 'none';
+    }
 
     tableBody.innerHTML = rows.map(function (item) {
 
@@ -306,96 +346,115 @@ function openReschedule(button) {
 
     rescheduleId = row.dataset.id;
 
-    document.getElementById('modalClient').textContent = row.dataset.client;
-    document.getElementById('modalArtist').textContent = row.dataset.artist;
+    setText('modalClient', row.dataset.client);
+    setText('modalArtist', row.dataset.artist);
 
     const newDate = document.getElementById('newDate');
-    newDate.min = getPhilippineNow().date;
-    newDate.value = row.dataset.date;
-
     const newTime = document.getElementById('newTime');
 
-    if (newTime.tagName === 'SELECT') {
-        populateTimeOptions(newTime, 30);
-    } else {
-        newTime.min = OPEN_TIME;
-        newTime.max = CLOSE_TIME;
+    if (newDate) {
+        newDate.min = getPhilippineNow().date;
+        newDate.value = row.dataset.date;
     }
 
-    // Always start at 8:00 AM when the modal opens; the user adjusts from there
-    newTime.value = OPEN_TIME;
+    if (newTime) {
 
-    document.getElementById('conflictMessage').textContent = '';
+        if (newTime.tagName === 'SELECT') {
+            populateTimeOptions(newTime, 30);
+        } else {
+            newTime.min = OPEN_TIME;
+            newTime.max = CLOSE_TIME;
+        }
 
-    const modal = document.getElementById('rescheduleModal');
-    modal.classList.add('show');
-    modal.style.display = 'flex';
+        // Always start at 8:00 AM when the modal opens
+        newTime.value = OPEN_TIME;
+    }
+
+    setText('conflictMessage', '');
+
+    showModal('rescheduleModal');
 }
 
 function closeReschedule() {
 
     rescheduleId = null;
 
-    const modal = document.getElementById('rescheduleModal');
-    modal.classList.remove('show');
-    modal.style.display = 'none';
+    hideModal('rescheduleModal');
 }
 
-document.getElementById('rescheduleForm').addEventListener('submit', async function (e) {
+if (rescheduleForm) {
 
-    e.preventDefault();
+    rescheduleForm.addEventListener('submit', async function (e) {
 
-    const conflictMessage = document.getElementById('conflictMessage');
-    conflictMessage.textContent = '';
+        e.preventDefault();
 
-    const newDateValue = document.getElementById('newDate').value;
-    const newTimeValue = document.getElementById('newTime').value;
-    const now = getPhilippineNow();
+        const conflictMessage = document.getElementById('conflictMessage');
 
-    if (!isWithinBusinessHours(newTimeValue)) {
-        conflictMessage.textContent = 'Appointments are only available from 8:00 AM to 5:00 PM (Philippine Time).';
-        return;
-    }
+        function setConflict(text) {
+            if (conflictMessage) {
+                conflictMessage.textContent = text;
+            }
+        }
 
-    if (newDateValue < now.date || (newDateValue === now.date && newTimeValue <= now.time)) {
-        conflictMessage.textContent = 'Please choose a date and time that has not passed yet (Philippine Time).';
-        return;
-    }
+        setConflict('');
 
-    try {
+        const newDateValue = document.getElementById('newDate').value;
+        const newTimeValue = document.getElementById('newTime').value;
+        const now = getPhilippineNow();
 
-        const response = await fetch('/api/clientappointment/' + rescheduleId + '/reschedule', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                date: newDateValue,
-                time: newTimeValue
-            })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-            conflictMessage.textContent = data.message || 'Reschedule failed.';
+        if (!isWithinBusinessHours(newTimeValue)) {
+            setConflict('Appointments are only available from 8:00 AM to 5:00 PM (Philippine Time).');
             return;
         }
 
-        closeReschedule();
-        await loadAppointments();
-        showMessage('Appointment Updated', 'The appointment has been rescheduled.', false);
+        if (newDateValue < now.date || (newDateValue === now.date && newTimeValue <= now.time)) {
+            setConflict('Please choose a date and time that has not passed yet (Philippine Time).');
+            return;
+        }
 
-    } catch (error) {
-        conflictMessage.textContent = 'Something went wrong. Please try again.';
-    }
-});
+        try {
+
+            const response = await fetch('/api/clientappointment/' + rescheduleId + '/reschedule', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    date: newDateValue,
+                    time: newTimeValue
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                setConflict(data.message || 'Reschedule failed.');
+                return;
+            }
+
+            closeReschedule();
+            await loadAppointments();
+            showMessage('Appointment Updated', 'The appointment has been rescheduled.', false);
+
+        } catch (error) {
+            setConflict('Something went wrong. Please try again.');
+        }
+    });
+}
 
 
 // ======================================================
 // FILTERS + INITIAL LOAD
 // ======================================================
 
-searchInput.addEventListener('input', renderAppointments);
-statusFilter.addEventListener('change', renderAppointments);
-dateFilter.addEventListener('change', renderAppointments);
+if (searchInput) {
+    searchInput.addEventListener('input', renderAppointments);
+}
+
+if (statusFilter) {
+    statusFilter.addEventListener('change', renderAppointments);
+}
+
+if (dateFilter) {
+    dateFilter.addEventListener('change', renderAppointments);
+}
 
 loadAppointments();

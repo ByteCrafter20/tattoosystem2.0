@@ -24,7 +24,14 @@
             <li><a href="/logout" class="logout-link">Logout</a></li>
         </ul>
 
+        <button id="hamburgerBtn" class="hamburger" type="button"
+        aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+    </button>
+
     </nav>
+
+   
 
     <!-- ===== MAIN ===== -->
     <main class="container">
@@ -332,5 +339,38 @@
     <script src="/js/clientdashboard.js"></script>
     <script src="/js/appointment.js"></script>
     <script src="/js/Modal-ui.js"></script>
+    <script>
+        (function () {
+            var btn = document.getElementById('hamburgerBtn');
+            var menu = document.querySelector('.nav-links');
+            if (!btn || !menu) return;
+        
+            function setOpen(open) {
+                btn.classList.toggle('open', open);
+                menu.classList.toggle('open', open);
+                btn.setAttribute('aria-expanded', String(open));
+            }
+        
+            // Buksan / isara
+            btn.addEventListener('click', function () {
+                setOpen(!menu.classList.contains('open'));
+            });
+        
+            // Pindot sa link o sa dim na labas ng drawer = isara
+            menu.addEventListener('click', function (e) {
+                if (e.target === menu || e.target.closest('a')) setOpen(false);
+            });
+        
+            // Esc = isara
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') setOpen(false);
+            });
+        
+            // Lumaki ang screen = isara
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 768) setOpen(false);
+            });
+        })();
+        </script>
 </body>
 </html>
