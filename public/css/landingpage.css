@@ -153,7 +153,7 @@
   #styles{
     background:
       linear-gradient(rgba(11,11,13,.88), rgba(11,11,13,.92)),
-      url('/images/Background1.jpg') center / cover no-repeat,
+      url('/images/Background1.jpg.jpg') center / cover no-repeat,
       var(--black);
   }
   #pricing{

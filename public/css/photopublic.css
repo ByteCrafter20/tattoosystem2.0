@@ -83,6 +83,31 @@
     font-size:1.05rem;
   }
   
+  .view-more-wrap{
+    display:flex;
+    justify-content:center;
+    margin-top:2rem;
+  }
+  
+  .view-more{
+    display:inline-block;
+    min-width:260px;
+    text-align:center;
+    padding:.8rem 2rem;
+    background:var(--red);
+    color:#fff;
+    font-size:1rem;
+    font-weight:800;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    border-radius:999px;
+    transition:background .15s, transform .15s;
+  }
+  .view-more:hover{background:var(--red-dark);transform:translateY(-2px)}
+  
+  /* Hindi na clickable ang cards */
+  .style-card:hover{transform:none}
+
   /* ===== GALLERY ===== */
   .container{
     width:100%;
@@ -214,3 +239,7 @@
     html{scroll-behavior:auto}
     .gallery-item,.gallery-item img{transition:none}
   }
+
+  .style-grid{grid-template-columns:repeat(5,1fr)}
+@media (max-width:900px){.style-grid{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:600px){.style-grid{grid-template-columns:repeat(2,1fr)}}

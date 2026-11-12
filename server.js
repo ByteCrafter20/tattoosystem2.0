@@ -827,7 +827,7 @@ const initializeAdmin = async () => {
 };
 
 app.get("/", (req, res) => {
-    res.render("login");
+    res.render("landingpage");
 });
 
 app.get("/login", (req, res) => {
@@ -845,9 +845,9 @@ app.get("/register", (req, res) => {
     res.render("register");
 });
 
-app.get("/landingpage", (req, res) => {
-    res.render("landingpage");
-});
+// app.get("/landingpage", (req, res) => {
+//     res.render("landingpage");
+// });
 
 const MONTH_LABELS = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
