@@ -306,6 +306,7 @@
     margin:0 auto;
   }
   
+
   /* ===== RESPONSIVE ===== */
   @media (max-width:860px){
     .link-item{display:none}
@@ -319,4 +320,11 @@
   @media (prefers-reduced-motion:reduce){
     html{scroll-behavior:auto}
     .style-card{transition:none}
+  }
+
+  @media (max-width: 600px) {
+    .style-grid { grid-template-columns: repeat(2, 1fr); gap: .7rem; }
+    .style-card { min-height: 210px; padding: .8rem; }
+    .style-name { font-size: 1rem; }
+    .style-desc { font-size: .75rem; }
   }
