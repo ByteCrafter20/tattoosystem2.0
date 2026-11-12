@@ -7,6 +7,9 @@
 // Needs in the HTML: <input type="file" id="reference"> placed BEFORE #styleGrid,
 // and <small id="imageHint"></small> under it.
 // The uploaded file name picks the Tattoo Placement (fullsleeve.jpg -> Full Sleeve).
+//
+// SAVING: this file saves the booking by itself (see saveBooking below). No receipt popup.
+// Route: POST /api/appointments (server.js)
 
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -14,6 +17,14 @@ document.addEventListener('DOMContentLoaded', function () {
     var OPEN_MIN = 8 * 60;
     var CLOSE_MIN = 17 * 60;
     var STEP = 30;
+
+    // ====== SAVE SETTINGS (tugma sa server.js mo) ======
+    // POST /api/appointments  -> bookingRouter (multer: single("reference"))
+    var SAVE_URL = '/api/appointments';
+    var SAVE_METHOD = 'POST';
+    // 'formdata' = may kasamang image (tama ito, may multer ang server)
+    var SAVE_AS = 'formdata';
+    // ========================================================
 
     var form = document.getElementById('appointmentForm');
     if (!form) { return; }
@@ -38,6 +49,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var imageHint = document.getElementById('imageHint');
 
     var hasImage = false;
+    var saving = false;
+    var justSaved = false;
+    var lastSaved = null;
+    var WAIT_FLAG = 'totsShowWaiting';
     var LOCK_MSG = 'Mag-insert muna ng reference image (hal. fullsleeve.jpg) bago pumili ng style.';
 
     // ---------- helpers ----------
@@ -183,7 +198,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!match) {
                 imageInput.value = '';      // reject the file
                 hasImage = false;
-                setHint('Walang placement sa pangalan ng file. Isama ang isa sa mga ito (puwede ring may left/right), hal. fullsleeveright.jpg: ' + validPlacementNames().join(', '), true);
+                setHint('example. fullsleeve.jpg, fullback.jpg, fullsleeveright.jpg: ' + validPlacementNames().join(', '), true);
                 syncStyleCards();
                 return;
             }
@@ -396,9 +411,147 @@ document.addEventListener('DOMContentLoaded', function () {
     // gallery, Minimalist locking the size), which does not fire events.
     setInterval(sync, 500);
 
-    // ---------- VALIDATION (runs before clientdashboard.js's submit handler) ----------
+    // ---------- SAVING ----------
+
+    // key = pangalan ng field na hinihintay ng server.js
+    // Kinukuha sa id ng input; kung wala, sa name="" ng input.
+    var SERVER_FIELDS = [
+        'clientName', 'artist', 'date', 'time', 'tattooType', 'description',
+        'tattooSize', 'customWidth', 'customHeight',
+        'placement', 'placementOther', 'placementSide',
+        'paymentMethod', 'paymentAmount', 'referenceUrl'
+    ];
+
+    // Mga posibleng ibang id/name ng input para sa required na fields ng server
+    var FIELD_ALIASES = {
+        clientName: ['name', 'fullName', 'fullname', 'client', 'clientname']
+    };
+
+    function buildPayload() {
+        var fd = new FormData(form);
+
+        SERVER_FIELDS.forEach(function (key) {
+            var ids = [key].concat(FIELD_ALIASES[key] || []);
+            var el = null;
+            for (var i = 0; i < ids.length; i++) {
+                var cand = document.getElementById(ids[i]) || form.elements[ids[i]];
+                if (cand && cand.type !== 'file') {
+                    el = cand;
+                    if (cand.value) { break; }
+                }
+            }
+            if (!el) { return; }
+            var val = el.value;                       // RadioNodeList also works
+            if (val === undefined || val === null) { return; }
+            if (!fd.has(key) || fd.get(key) === '') { fd.set(key, val); }
+        });
+
+        // The server only accepts the image under the name "reference"
+        if (imageInput) {
+            if (imageInput.name && imageInput.name !== 'reference') { fd.delete(imageInput.name); }
+            fd.delete('reference');
+            if (imageInput.files && imageInput.files[0]) {
+                fd.set('reference', imageInput.files[0]);
+            }
+        }
+
+        if (SAVE_AS === 'json') {
+            var obj = {};
+            fd.forEach(function (v, k) {
+                if (v instanceof File) { return; }
+                obj[k] = v;
+            });
+            return { body: JSON.stringify(obj), headers: { 'Content-Type': 'application/json' } };
+        }
+
+        return { body: fd, headers: {} };   // browser sets the multipart header
+    }
+
+    function setSaving(on) {
+        saving = on;
+        var btn = form.querySelector('[type="submit"]');
+        if (btn) {
+            btn.disabled = on;
+            if (on) { btn.setAttribute('data-old', btn.textContent); btn.textContent = 'Saving...'; }
+            else if (btn.hasAttribute('data-old')) {
+                btn.textContent = btn.getAttribute('data-old');
+                btn.removeAttribute('data-old');
+            }
+        }
+    }
+
+    function saveBooking() {
+        if (saving) { return; }
+        setSaving(true);
+
+        var url = SAVE_URL;
+        var payload = buildPayload();
+
+        fetch(url, {
+            method: SAVE_METHOD,
+            headers: payload.headers,
+            body: payload.body,
+            credentials: 'same-origin'
+        })
+        .then(function (res) {
+            return res.text().then(function (text) {
+                var data = null;
+                try { data = text ? JSON.parse(text) : null; } catch (err) { data = null; }
+
+                if (!res.ok) {
+                    var msg = (data && (data.message || data.error)) ||
+                        text.replace(/<[^>]*>/g, ' ').trim().slice(0, 200) || res.statusText;
+                    var failure = new Error('Hindi na-save (' + res.status + '): ' + msg);
+                    failure.status = res.status;
+                    failure.data = data;
+                    throw failure;
+                }
+                return data;
+            });
+        })
+        .then(function (data) {
+            setSaving(false);
+            justSaved = true;
+            lastSaved = data && data.appointment ? data.appointment : null;
+            form.reset();   // reset handler below closes the form and shows the waiting modal
+
+            // Refresh the appointment list; if no loader function exists, reload the page
+            // (the waiting modal is shown again after the reload)
+            var refreshed = ['loadAppointments', 'fetchAppointments', 'renderAppointments'].some(function (fn) {
+                if (typeof window[fn] === 'function') { window[fn](); return true; }
+                return false;
+            });
+
+            if (!refreshed) {
+                lastSaved = null;
+                try { sessionStorage.setItem(WAIT_FLAG, '1'); } catch (err) { /* ignore */ }
+                setTimeout(function () { window.location.reload(); }, 150);
+            }
+        })
+        .catch(function (err) {
+            setSaving(false);
+
+            // May naghihintay nang appointment (hal. na-book mula sa ibang tab)
+            if (err && err.status === 409 && err.data && err.data.code === 'PENDING_EXISTS') {
+                if (typeof window.closeAppointmentModal === 'function') { window.closeAppointmentModal(); }
+                showWaiting(err.data.appointment);
+                return;
+            }
+
+            console.error('Save failed:', err);
+            alert(err.message && err.message.indexOf('Hindi na-save') === 0
+                ? err.message
+                : 'Hindi na-save. Hindi maabot ang server: ' + err.message);
+        });
+    }
+
+    // ---------- VALIDATION + SAVE (runs before clientdashboard.js's submit handler) ----------
 
     form.addEventListener('submit', function (e) {
+        // We handle saving here, so stop any other submit handler / normal page submit.
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
         var problem = '';
 
         if (!hasImage) {
@@ -412,23 +565,17 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (problem) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
             alert(problem);
-        } else {
-            // Validation passed: remember what is being booked, because the form
-            // is cleared after saving and the receipt still needs these details.
-            pendingBooking = takeSnapshot();
-            pendingAt = Date.now();
+            return;
         }
+
+        saveBooking();
     }, true);
 
     // After form.reset() (successful booking) rebuild the visual widgets
     form.addEventListener('reset', function () {
-        // A reset right after a validated submit means the booking was saved.
-        // (30 second window so a later Cancel/reset never shows a receipt.)
-        var booking = (pendingBooking && Date.now() - pendingAt < 30000) ? pendingBooking : null;
-        pendingBooking = null;
+        var saved = justSaved;
+        justSaved = false;
 
         setTimeout(function () {
             var n = phNow();
@@ -440,141 +587,195 @@ document.addEventListener('DOMContentLoaded', function () {
             renderTimes();
             sync();
 
-            if (booking) {
-                if (typeof window.closeAppointmentModal === 'function') {
-                    window.closeAppointmentModal();
-                }
-                window.showBookingReceipt(null, booking);
+            if (saved && typeof window.closeAppointmentModal === 'function') {
+                window.closeAppointmentModal();
             }
+
+            if (saved && lastSaved) { showWaiting(lastSaved); }
+            lastSaved = null;
         }, 0);
     });
 
-    // Re-render when the modal is opened (so "today" and passed times are fresh)
-    var openOriginal = window.openAppointmentModal;
+    // ---------- WAITING MODAL ----------
+    // Kapag may appointment nang naghihintay ng aksyon (Confirm / Reschedule / Cancel)
+    // ng admin o tattoo artist, ito na lang ang makikita ng client. Walang input,
+    // walang pwedeng gawin - maghihintay lang.
 
-    if (typeof openOriginal === 'function') {
-        window.openAppointmentModal = function () {
-            var r = openOriginal.apply(this, arguments);
-            var n = phNow();
-            viewYear = n.year;
-            viewMonth = n.month;
-            renderCalendar();
-            renderTimes();
-            sync();
-            return r;
-        };
+    var WAIT_POLL_MS = 15000;
+    var waitTimer = null;
+
+    var waitCss = document.createElement('style');
+    waitCss.textContent =
+        '#waitModal{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);padding:16px}' +
+        '#waitModal.open{display:flex}' +
+        '#waitModal .wait-box{background:#16161b;color:#f2f2f2;border:1px solid rgba(255,255,255,.12);border-radius:14px;max-width:400px;width:100%;padding:28px 24px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.6)}' +
+        '#waitModal .wait-icon{font-size:44px;line-height:1}' +
+        '#waitModal h3{margin:10px 0 8px;font-size:20px}' +
+        '#waitModal .wait-text{margin:0 0 16px;color:#b9b9c2;font-size:14px;line-height:1.5}' +
+        '#waitModal .wait-rows{border-top:1px dashed rgba(255,255,255,.2);padding-top:10px;text-align:left;font-size:13px}' +
+        '#waitModal .wait-row{display:flex;justify-content:space-between;gap:12px;padding:3px 0}' +
+        '#waitModal .wait-row span{color:#8e8e99}' +
+        '#waitModal .wait-ok{margin-top:18px;width:100%;padding:10px;border:0;border-radius:8px;background:#c0392b;color:#fff;font-size:14px;cursor:pointer}';
+    document.head.appendChild(waitCss);
+
+    var waitModal = document.createElement('div');
+    waitModal.id = 'waitModal';
+    waitModal.setAttribute('role', 'dialog');
+    waitModal.setAttribute('aria-modal', 'true');
+    document.body.appendChild(waitModal);
+
+    function node(tag, cls, text) {
+        var n = document.createElement(tag);
+        if (cls) { n.className = cls; }
+        if (text !== undefined) { n.textContent = text; }
+        return n;
     }
 
-    // ---------- BOOKING RECEIPT ("Book Appointment Complete") ----------
-    // Receipt numbers: TOTS0001, TOTS0002 ... TOTS0030, then back to TOTS0001.
-
-    var RECEIPT_PREFIX = 'TOTS';
-    var RECEIPT_MAX = 30;
-    var RECEIPT_KEY = 'totsReceiptCounter';
-
-    var pendingBooking = null;
-    var pendingAt = 0;
-
-    // NOTE: this counter lives in this browser's localStorage. For one shared
-    // counter across all clients, generate the number on the server and pass it
-    // in:  window.showBookingReceipt('TOTS0007', details)
-    function nextReceiptNo() {
-        var last = 0;
-        try { last = Number(localStorage.getItem(RECEIPT_KEY)) || 0; } catch (err) { last = 0; }
-        var next = (last % RECEIPT_MAX) + 1;
-        try { localStorage.setItem(RECEIPT_KEY, String(next)); } catch (err) { /* ignore */ }
-        return RECEIPT_PREFIX + String(next).padStart(4, '0');
+    function stopWaitPolling() {
+        if (waitTimer) { clearInterval(waitTimer); waitTimer = null; }
     }
 
-    function readText(id) {
-        var el = document.getElementById(id);
-        return el ? el.textContent.trim() : '';
+    function closeWait() {
+        var reload = waitModal.getAttribute('data-reload') === '1';
+        waitModal.classList.remove('open');
+        waitModal.removeAttribute('data-reload');
+        stopWaitPolling();
+        if (reload) { window.location.reload(); }   // status changed -> refresh the table
     }
 
-    function takeSnapshot() {
-        return {
-            artist: readText('sumArtist'),
-            style: readText('sumStyle'),
-            date: readText('sumDate'),
-            time: readText('sumTime'),
-            size: readText('sumSize'),
-            placement: readText('sumPlacement'),
-            amount: readText('amountDisplay'),
-            balance: readText('balanceDisplay')
-        };
-    }
-
-    var receiptCss = document.createElement('style');
-    receiptCss.textContent =
-        '#receiptModal{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);padding:16px}' +
-        '#receiptModal.open{display:flex}' +
-        '#receiptModal .receipt-box{background:#fff;color:#222;border-radius:12px;max-width:380px;width:100%;padding:24px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.4)}' +
-        '#receiptModal .receipt-check{font-size:42px;color:#2e7d32;line-height:1}' +
-        '#receiptModal h3{margin:8px 0 2px;font-size:20px}' +
-        '#receiptModal .receipt-sub{margin:0 0 14px;color:#666;font-size:14px}' +
-        '#receiptModal .receipt-label{font-size:12px;color:#777;text-transform:uppercase;letter-spacing:.08em}' +
-        '#receiptModal .receipt-no{font-size:28px;font-weight:700;letter-spacing:.06em;color:#c0392b;margin:2px 0 14px}' +
-        '#receiptModal .receipt-rows{border-top:1px dashed #bbb;padding-top:10px;text-align:left;font-size:13px}' +
-        '#receiptModal .receipt-row{display:flex;justify-content:space-between;gap:12px;padding:3px 0}' +
-        '#receiptModal .receipt-row span{color:#777}' +
-        '#receiptModal .receipt-ok{margin-top:16px;width:100%;padding:10px;border:0;border-radius:8px;background:#c0392b;color:#fff;font-size:14px;cursor:pointer}';
-    document.head.appendChild(receiptCss);
-
-    var receiptModal = document.createElement('div');
-    receiptModal.id = 'receiptModal';
-    receiptModal.setAttribute('role', 'dialog');
-    receiptModal.setAttribute('aria-modal', 'true');
-    document.body.appendChild(receiptModal);
-
-    function closeReceipt() { receiptModal.classList.remove('open'); }
-
-    receiptModal.addEventListener('click', function (e) {
-        if (e.target === receiptModal || e.target.classList.contains('receipt-ok')) { closeReceipt(); }
+    waitModal.addEventListener('click', function (e) {
+        if (e.target === waitModal || e.target.classList.contains('wait-ok')) { closeWait(); }
     });
 
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') { closeReceipt(); }
+        if (e.key === 'Escape' && waitModal.classList.contains('open')) { closeWait(); }
     });
 
-    function el(tag, cls, text) {
-        var node = document.createElement(tag);
-        if (cls) { node.className = cls; }
-        if (text !== undefined) { node.textContent = text; }
-        return node;
+    function fmtServerDate(v) {
+        var d = new Date(v);
+        if (isNaN(d.getTime())) { return ''; }
+        return d.toLocaleDateString('en-US', {
+            year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC'
+        });
     }
 
-    // receiptNo: pass a server-made number, or null to use the local counter.
-    window.showBookingReceipt = function (receiptNo, booking) {
-        var no = receiptNo || nextReceiptNo();
-        var b = booking || {};
+    function fmtServerTime(t) {
+        return /^\d{1,2}:\d{2}$/.test(String(t || '')) ? label12(pad(t.split(':')[0]) + ':' + t.split(':')[1]) : (t || '');
+    }
 
-        var box = el('div', 'receipt-box');
-        box.appendChild(el('div', 'receipt-check', '\u2714'));
-        box.appendChild(el('h3', '', 'Book Appointment Complete'));
-        box.appendChild(el('p', 'receipt-sub', 'Saved'));
-        box.appendChild(el('div', 'receipt-label', 'Receipt No.'));
-        box.appendChild(el('div', 'receipt-no', no));
+    // Asks the server if this client still has a request waiting for an answer.
+    function fetchPending() {
+        return fetch('/api/appointments/pending', { credentials: 'same-origin' })
+            .then(function (res) {
+                return res.json().then(function (d) {
+                    if (!res.ok || !d || !d.success) { throw new Error('pending check failed'); }
+                    return d;
+                });
+            });
+    }
 
-        var rows = el('div', 'receipt-rows');
+    function startWaitPolling() {
+        stopWaitPolling();
+        waitTimer = setInterval(function () {
+            if (!waitModal.classList.contains('open')) { stopWaitPolling(); return; }
+
+            fetchPending().then(function (d) {
+                if (!d.pending) {
+                    stopWaitPolling();
+                    showWaitUpdate(d.latest);
+                }
+            }).catch(function () { /* try again next round */ });
+        }, WAIT_POLL_MS);
+    }
+
+    function openWaitBox(box, reloadOnClose) {
+        waitModal.innerHTML = '';
+        waitModal.appendChild(box);
+        if (reloadOnClose) { waitModal.setAttribute('data-reload', '1'); }
+        else { waitModal.removeAttribute('data-reload'); }
+        waitModal.classList.add('open');
+    }
+
+    function showWaiting(appt) {
+        var a = appt || {};
+        var box = node('div', 'wait-box');
+
+        box.appendChild(node('div', 'wait-icon', '\u23F3'));
+        box.appendChild(node('h3', '', 'Waiting for Confirmation'));
+        box.appendChild(node('p', 'wait-text',
+            'Your appointment request was sent. Please wait for the admin or tattoo artist ' +
+            'to confirm, reschedule, or cancel it. You can book again after they respond.'));
+
+        var rows = node('div', 'wait-rows');
         [
-            ['Artist', b.artist], ['Style', b.style], ['Date', b.date], ['Time', b.time],
-            ['Size', b.size], ['Placement', b.placement],
-            ['Amount', b.amount], ['Balance', b.balance]
+            ['Artist', a.artist],
+            ['Style', a.tattooType],
+            ['Date', a.date ? fmtServerDate(a.date) : ''],
+            ['Time', fmtServerTime(a.time)],
+            ['Status', a.status || 'Pending']
         ].forEach(function (r) {
-            if (!r[1] || r[1] === '-') { return; }
-            var row = el('div', 'receipt-row');
-            row.appendChild(el('span', '', r[0]));
-            row.appendChild(el('b', '', r[1]));
+            if (!r[1]) { return; }
+            var row = node('div', 'wait-row');
+            row.appendChild(node('span', '', r[0]));
+            row.appendChild(node('b', '', r[1]));
             rows.appendChild(row);
         });
         box.appendChild(rows);
-        box.appendChild(el('button', 'receipt-ok', 'OK'));
+        box.appendChild(node('button', 'wait-ok', 'OK'));
 
-        receiptModal.innerHTML = '';
-        receiptModal.appendChild(box);
-        receiptModal.classList.add('open');
+        openWaitBox(box, false);
+        startWaitPolling();
+    }
 
-        return no;
+    // Shown (while the waiting modal is open) when the admin / tattoo artist responds.
+    function showWaitUpdate(latest) {
+        var status = latest && latest.status ? latest.status : 'updated';
+        var box = node('div', 'wait-box');
+
+        box.appendChild(node('div', 'wait-icon', '\uD83D\uDD14'));
+        box.appendChild(node('h3', '', 'Your request was updated'));
+        box.appendChild(node('p', 'wait-text',
+            'Status: ' + status + '. Please check My Appointments for the details.'));
+        box.appendChild(node('button', 'wait-ok', 'OK'));
+
+        openWaitBox(box, true);
+    }
+
+    // ---------- OPEN THE BOOKING FORM (or the waiting modal) ----------
+
+    var openOriginal = window.openAppointmentModal;
+
+    function openBookingForm(self, args) {
+        var r;
+
+        if (typeof openOriginal === 'function') {
+            r = openOriginal.apply(self, args);
+        } else {
+            var m = document.getElementById('appointmentModal');
+            if (m) { m.style.display = 'flex'; }
+        }
+
+        // so "today" and passed times are fresh
+        var n = phNow();
+        viewYear = n.year;
+        viewMonth = n.month;
+        renderCalendar();
+        renderTimes();
+        sync();
+        return r;
+    }
+
+    window.openAppointmentModal = function () {
+        var self = this;
+        var args = arguments;
+
+        fetchPending().then(function (d) {
+            if (d.pending) { showWaiting(d.pending); }
+            else { openBookingForm(self, args); }
+        }).catch(function () {
+            // Could not check: open the form; the server still blocks a second request.
+            openBookingForm(self, args);
+        });
     };
 
     // ---------- INIT ----------
@@ -583,4 +784,14 @@ document.addEventListener('DOMContentLoaded', function () {
     renderCalendar();
     renderTimes();
     sync();
+
+    // After the page reloaded following a new booking, show the waiting modal again
+    try {
+        if (sessionStorage.getItem(WAIT_FLAG) === '1') {
+            sessionStorage.removeItem(WAIT_FLAG);
+            fetchPending().then(function (d) {
+                if (d.pending) { showWaiting(d.pending); }
+            }).catch(function () { /* ignore */ });
+        }
+    } catch (err) { /* ignore */ }
 });

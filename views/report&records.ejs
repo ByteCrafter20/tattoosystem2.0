@@ -12,10 +12,6 @@
 
 <body>
 
-    <!-- ==================================================
-         NAVBAR - ISANG <nav> lang. Nasa loob ang logo, button at links.
-         ================================================== -->
-
     <nav class="navbar">
 
         <div class="logo">
@@ -31,31 +27,12 @@
         </button>
 
         <ul class="nav-links" id="navLinks">
-
-            <li>
-                <a href="/dashboard">Dashboard</a>
-            </li>
-
-            <li>
-                <a href="/clientappointment">Appointment of a Client</a>
-            </li>
-
-            <li>
-                <a href="/inventory">Inventory</a>
-            </li>
-
-            <li>
-                <a href="/reports" class="active">Reports &amp; Records</a>
-            </li>
-
-            <li>
-                <a href="/photos">Photos Gallery</a>
-            </li>
-            
-            <li>
-                <a href="/logout">Logout</a>
-            </li>
-
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/clientappointment">Appointment of a Client</a></li>
+            <li><a href="/inventory">Inventory</a></li>
+            <li><a href="/reports" class="active">Reports &amp; Records</a></li>
+            <li><a href="/photos">Photos Gallery</a></li>
+            <li><a href="/logout">Logout</a></li>
         </ul>
 
     </nav>
@@ -64,22 +41,14 @@
     <main class="container">
 
         <div class="page-header">
-
             <div>
                 <h1>Reports &amp; Records</h1>
-
-                <p>
-                    Manage and review client appointment records and reports.
-                </p>
+                <p>Manage and review client appointment records and reports.</p>
             </div>
-
         </div>
 
 
-        <!-- ==================================================
-             SUMMARY - galing sa MongoDB
-             ================================================== -->
-
+        <!-- SUMMARY -->
         <section class="summary-grid">
 
             <div class="summary-card">
@@ -113,14 +82,10 @@
         </section>
 
 
-        <!-- ==================================================
-             INVENTORY MANAGEMENT
-             ================================================== -->
-
+        <!-- INVENTORY MANAGEMENT -->
         <section class="inventory-section">
 
-            <div class="section-header">
-            </div>
+            <div class="section-header"></div>
 
             <div class="summary-grid inventory-summary">
 
@@ -163,6 +128,8 @@
                             <th>Item Name</th>
                             <th>Category</th>
                             <th>Quantity</th>
+                            <th>Unit</th>
+                            <th>Reorder Level</th>
                             <th>Stock Status</th>
                         </tr>
                     </thead>
@@ -181,29 +148,19 @@
         </section>
 
 
-        <!-- ==================================================
-             APPOINTMENT RECORDS
-             ================================================== -->
-
+        <!-- APPOINTMENT RECORDS -->
         <section class="records-section">
 
             <div class="section-header">
 
                 <div>
                     <h2>Appointment Records</h2>
-
-                    <p>
-                        List of client appointment history.
-                    </p>
+                    <p>List of client appointment history.</p>
                 </div>
 
                 <div class="filter-area">
 
-                    <input
-                        type="text"
-                        id="searchInput"
-                        placeholder="Search client..."
-                    >
+                    <input type="text" id="searchInput" placeholder="Search client...">
 
                     <select id="statusFilter">
                         <option value="all">All Status</option>
@@ -251,23 +208,16 @@
         </section>
 
 
-        <!-- ==================================================
-             CLIENT RECORDS
-             ================================================== -->
-
+        <!-- CLIENT RECORDS -->
         <section class="client-records">
 
             <div class="section-header">
                 <div>
                     <h2>Client Records</h2>
-
-                    <p>
-                        Registered clients in the system.
-                    </p>
+                    <p>Registered clients in the system.</p>
                 </div>
             </div>
 
-            <!-- Cards are rendered from MongoDB by /js/report.js -->
             <div class="client-grid" id="clientGrid"></div>
 
             <div class="no-records" id="noClients">
@@ -277,23 +227,16 @@
         </section>
 
 
-        <!-- ==================================================
-             REFERENCE PHOTOS - katabi ng Client Records
-             ================================================== -->
-
+        <!-- REFERENCE PHOTOS -->
         <section class="client-records">
 
             <div class="section-header">
                 <div>
                     <h2>Reference Photos</h2>
-
-                    <p>
-                        Photos submitted or chosen by clients for their appointments.
-                    </p>
+                    <p>Photos submitted or chosen by clients for their appointments.</p>
                 </div>
             </div>
 
-            <!-- Rendered from MongoDB by /js/report.js -->
             <div class="photo-grid" id="photoGrid"></div>
 
             <div class="no-records" id="noPhotos">
@@ -305,22 +248,12 @@
     </main>
 
 
-    <!-- ==================================================
-         IMAGE PREVIEW MODAL
-         ================================================== -->
-
+    <!-- IMAGE PREVIEW MODAL -->
     <div id="imageModal" class="image-modal">
-
         <div class="image-modal-content">
-
-            <button type="button" id="closeImageModal"  class="image-modal-close">
-                &times;
-            </button>
-
+            <button type="button" id="closeImageModal" class="image-modal-close">&times;</button>
             <img id="imagePreview" src="" alt="Reference photo">
-
         </div>
-
     </div>
 
 

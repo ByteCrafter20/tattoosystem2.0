@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import path from "path";
+import crypto from "crypto";
 import { fileURLToPath } from "url";
 import mongoose from "mongoose";
 import multer from "multer";
@@ -13,6 +14,7 @@ import appointmentRoutes from "./routes/appointmentRoutes.js";
 import inventoryRoutes from "./routes/inventoryRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import photoRoutes from "./routes/photoRoutes.js";
+import pageRoutes from "./routes/pageRoutes.js";
 import User from "./models/user.js";
 import Dashboard from "./models/dashboard.js";
 import bcrypt from "bcryptjs";
@@ -26,9 +28,51 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// ======================================================
+// SIGNED LOGIN COOKIES  (SECURITY FIX)
+// Dati plain cookies ang userId / role / username, kaya kahit sino ay
+// pwedeng palitan ang role ng "admin" sa browser DevTools. Ngayon ay
+// naka-sign ang mga ito gamit ang COOKIE_SECRET - kapag binago ng user,
+// hindi na valid at hindi siya makaka-login.
+//
+// Ilagay sa .env:   COOKIE_SECRET=isang-mahaba-at-random-na-text
+// ======================================================
+
+let COOKIE_SECRET = process.env.COOKIE_SECRET;
+
+if (!COOKIE_SECRET) {
+    COOKIE_SECRET = crypto.randomBytes(32).toString("hex");
+    console.warn(
+        "⚠ Walang COOKIE_SECRET sa .env - random muna ang gagamitin, " +
+        "kaya malo-log out ang lahat sa bawat restart ng server."
+    );
+}
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieParser(COOKIE_SECRET));
+
+// Ang valid (signed) na cookies lang ang ilalagay sa req.cookies.
+// Kaya hindi na kailangang baguhin ang middleware/requireRole.js at ang
+// mga routes - gumagana pa rin sila gamit ang req.cookies.userId / role.
+// Ang pekeng (unsigned) na cookie ay binubura rito.
+const AUTH_COOKIES = ["userId", "username", "role"];
+
+app.use((req, res, next) => {
+    const signed = req.signedCookies || {};
+
+    req.cookies = req.cookies || {};
+
+    AUTH_COOKIES.forEach((name) => {
+        if (typeof signed[name] === "string" && signed[name]) {
+            req.cookies[name] = signed[name];
+        } else {
+            delete req.cookies[name];
+        }
+    });
+
+    next();
+});
 
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -77,7 +121,6 @@ function requireRoles(allowed) {
 const bookingSchema = new mongoose.Schema(
     {
         clientName: { type: String, required: true, trim: true },
-        phone: { type: String, required: true, trim: true },
         artist: { type: String, required: true, trim: true },
         date: { type: Date, required: true },
         time: { type: String, required: true },
@@ -192,10 +235,23 @@ function uploadReference(req, res, next) {
         return res.status(400).json({
             success: false,
             message: error instanceof multer.MulterError
-                ? "Reference image is too large (max 5MB)."
+                ? (error.code === "LIMIT_FILE_SIZE"
+                    ? "Reference image is too large (max 5MB)."
+                    : "Upload error: " + error.message +
+                      (error.field ? " (" + error.field + ")" : ""))
                 : error.message
         });
     });
+}
+
+// Sa development, ipinapakita ang tunay na dahilan ng error para
+// madaling malaman kung bakit hindi nagsa-save. Sa production, generic lang.
+function errorDetail(error) {
+    if (process.env.NODE_ENV === "production") {
+        return "";
+    }
+
+    return " (" + (error && error.message ? error.message : String(error)) + ")";
 }
 
 const SIZE_PRICES = { Small: 700, Medium: 1500, Large: 10000 };
@@ -210,6 +266,13 @@ const VALID_STATUS = [
     "Completed",
     "Cancelled"
 ];
+
+// Habang may appointment ang client na may ganitong status, hindi siya
+// pwedeng mag-book ulit - maghihintay muna siya sa aksyon ng admin /
+// tattoo artist (Confirm, Reschedule o Cancel).
+// Gusto mong harangin hanggang matapos ang appointment? Gawing:
+//   ["Pending", "Confirmed", "Rescheduled"]
+const BLOCKING_STATUSES = ["Pending"];
 
 function computeAmount(size, width, height) {
     if (Object.prototype.hasOwnProperty.call(SIZE_PRICES, size)) {
@@ -249,6 +312,65 @@ function requireLoginCookie(req, res, next) {
 
 const bookingRouter = express.Router();
 
+async function findWaitingAppointment(userId) {
+    return Booking
+        .findOne({ userId: String(userId), status: { $in: BLOCKING_STATUSES } })
+        .sort({ createdAt: -1 })
+        .lean();
+}
+
+// Hinaharang ang bagong booking kung may naghihintay pa. Staff (admin / owner /
+// tattoo artist) ay hindi sakop nito.
+async function blockIfWaiting(req, res, next) {
+    try {
+        if (STAFF_ROLES.includes(req.user.role)) {
+            return next();
+        }
+
+        const waiting = await findWaitingAppointment(req.user.id);
+
+        if (!waiting) {
+            return next();
+        }
+
+        return res.status(409).json({
+            success: false,
+            code: "PENDING_EXISTS",
+            message: "You already have an appointment waiting for confirmation.",
+            appointment: waiting
+        });
+
+    } catch (error) {
+        console.error("blockIfWaiting", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to check your appointments." + errorDetail(error)
+        });
+    }
+}
+
+// Ginagamit ng clientdashboard: may naghihintay ba na appointment?
+bookingRouter.get("/pending", requireLoginCookie, async (req, res) => {
+    try {
+        const pending = await findWaitingAppointment(req.user.id);
+
+        const latest = pending || await Booking
+            .findOne({ userId: String(req.user.id) })
+            .sort({ createdAt: -1 })
+            .select("status date time artist tattooType")
+            .lean();
+
+        return res.json({ success: true, pending: pending || null, latest: latest || null });
+
+    } catch (error) {
+        console.error("GET /api/appointments/pending", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to check appointments." + errorDetail(error)
+        });
+    }
+});
+
 bookingRouter.get("/", requireLoginCookie, async (req, res) => {
     try {
         const appointments = await Booking
@@ -262,7 +384,7 @@ bookingRouter.get("/", requireLoginCookie, async (req, res) => {
         console.error("GET /api/appointments", error);
         return res.status(500).json({
             success: false,
-            message: "Failed to load appointments."
+            message: "Failed to load appointments." + errorDetail(error)
         });
     }
 });
@@ -369,7 +491,7 @@ bookingRouter.post("/:id/pay", requireLoginCookie, async (req, res) => {
         console.error("POST /api/appointments/:id/pay", error);
         return res.status(500).json({
             success: false,
-            message: "Failed to record payment."
+            message: "Failed to record payment." + errorDetail(error)
         });
     }
 });
@@ -424,7 +546,7 @@ bookingRouter.patch("/:id/status", requireLoginCookie, async (req, res) => {
         console.error("PATCH /api/appointments/:id/status", error);
         return res.status(500).json({
             success: false,
-            message: "Failed to update appointment status."
+            message: "Failed to update appointment status." + errorDetail(error)
         });
     }
 });
@@ -432,21 +554,46 @@ bookingRouter.patch("/:id/status", requireLoginCookie, async (req, res) => {
 bookingRouter.post(
     "/",
     requireLoginCookie,
+    blockIfWaiting,
     uploadReference,
     async (req, res) => {
         try {
-            const clientName = (req.body.clientName || "").trim();
-            const phone = (req.body.phone || "").trim();
+            // Tumatanggap ng ibang pangalan ng field; ang clientName ay
+            // babagsak sa username ng naka-login kung walang laman.
+            const pick = (...keys) => {
+                for (const key of keys) {
+                    const value = req.body[key];
+
+                    if (typeof value === "string" && value.trim()) {
+                        return value.trim();
+                    }
+                }
+
+                return "";
+            };
+
+            const clientName = pick("clientName", "name", "fullName", "client") ||
+                (req.user.username || "").trim();
             const artist = (req.body.artist || "").trim();
             const time = req.body.time;
             const tattooType = req.body.tattooType;
             const description = (req.body.description || "").trim();
 
-            if (!clientName || !phone || !artist || !req.body.date ||
+            if (!clientName || !artist || !req.body.date ||
                 !time || !tattooType) {
+                // Sinasabi na kung aling field ang kulang
+                const missing = [];
+
+                if (!clientName) { missing.push("clientName"); }
+                if (!artist) { missing.push("artist"); }
+                if (!req.body.date) { missing.push("date"); }
+                if (!time) { missing.push("time"); }
+                if (!tattooType) { missing.push("tattooType"); }
+
                 return res.status(400).json({
                     success: false,
-                    message: "Please complete all required fields."
+                    message: "Please complete all required fields. Missing: " +
+                        missing.join(", ")
                 });
             }
 
@@ -552,7 +699,6 @@ bookingRouter.post(
 
             const appointment = await Booking.create({
                 clientName,
-                phone,
                 artist,
                 date: parsedDate,
                 time,
@@ -581,7 +727,7 @@ bookingRouter.post(
             console.error("POST /api/appointments", error);
             return res.status(500).json({
                 success: false,
-                message: "Failed to book appointment."
+                message: "Failed to book appointment." + errorDetail(error)
             });
         }
     }
@@ -594,6 +740,18 @@ app.use("/api/appointments/admin", reportRoutes);
 app.use("/api/appointments", bookingRouter);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/photos", photoRoutes);
+app.use("/", pageRoutes);
+
+// ======================================================
+// ADMIN ACCOUNT  (SECURITY FIX)
+// Wala nang hardcoded na "admin123".
+//  - Kung may ADMIN_PASSWORD sa .env, iyon ang gagamitin (at ia-update
+//    ang password ng admin tuwing mag-start kung iba ito).
+//  - Kung wala at bagong account pa lang, gagawa ng random na password
+//    at ipi-print ONE TIME sa console. Isulat agad.
+// Ang existing na admin password ay hindi binabago kung walang
+// ADMIN_PASSWORD sa .env.
+// ======================================================
 
 const initializeAdmin = async () => {
     try {
@@ -601,9 +759,14 @@ const initializeAdmin = async () => {
             username: "admin"
         });
 
+        const envPassword = process.env.ADMIN_PASSWORD;
+
         if (!admin) {
+            const initialPassword = envPassword ||
+                crypto.randomBytes(8).toString("hex");
+
             const hashedPassword = await bcrypt.hash(
-                "admin123",
+                initialPassword,
                 10
             );
 
@@ -619,7 +782,14 @@ const initializeAdmin = async () => {
             console.log("=================================");
             console.log("✅ ADMIN CREATED");
             console.log("Username: admin");
-            console.log("Password: admin123");
+
+            if (envPassword) {
+                console.log("Password: (galing sa ADMIN_PASSWORD sa .env)");
+            } else {
+                console.log("Password:", initialPassword);
+                console.log("⚠ Isulat ito at palitan agad. Hindi na ito ipapakita ulit.");
+            }
+
             console.log("Role: admin");
             console.log("=================================");
 
@@ -628,6 +798,15 @@ const initializeAdmin = async () => {
 
             if (admin.isActive === undefined) {
                 admin.isActive = true;
+            }
+
+            if (envPassword) {
+                const same = await bcrypt.compare(envPassword, admin.password);
+
+                if (!same) {
+                    admin.password = await bcrypt.hash(envPassword, 10);
+                    console.log("🔐 Admin password updated from ADMIN_PASSWORD.");
+                }
             }
 
             await admin.save();
@@ -666,6 +845,9 @@ app.get("/register", (req, res) => {
     res.render("register");
 });
 
+app.get("/landingpage", (req, res) => {
+    res.render("landingpage");
+});
 
 const MONTH_LABELS = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -901,8 +1083,10 @@ app.post("/login", async (req, res) => {
             });
         }
 
+        // signed: true -> hindi na mapepeke ang userId / role sa browser
         const cookieOptions = {
             httpOnly: true,
+            signed: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
             maxAge: 365 * 24 * 60 * 60 * 1000

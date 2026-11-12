@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Recent Tattoo Works | Totats Skin Art Tattoo</title>
+  <meta name="description" content="Recent tattoo works by Totats Skin Art Tattoo in San Jose del Monte, Bulacan. Sleeves, back pieces, minimalist, forearm and leg tattoos." />
+  <link rel="stylesheet" href="/css/photopublic.css" />
+</head>
+<body>
+
+  <header class="navbar">
+    <a class="logo" href="/landingpage">
+      <img src="/images/TotatsSkinArtTattoo.jpg" alt="Totats Skin Art Tattoo logo">
+      <span class="brand">Totats <span>Skin Art Tattoo</span></span>
+    </a>
+    <a class="back-link" href="/landingpage#styles">&#8592; Back to Landing Page</a>
+  </header>
+
+  <main>
+
+    <section class="page-hero">
+      <h1>Recent Tattoo Works</h1>
+      <p>A look at tattoos we have done for our clients. Use the dropdowns to see more designs in each placement.</p>
+    </section>
+
+    <section class="container">
+
+      <div class="gallery-grid">
+
+        <figure class="gallery-item">
+          <img src="/images/Necktattoo.jpg" alt="Neck tattoo" loading="lazy">
+          <figcaption>Neck Tattoo</figcaption>
+        </figure>
+
+        <figure class="gallery-item">
+          <img src="/images/ChestTattoo.jpg" alt="Chest tattoo" loading="lazy">
+          <figcaption>Chest Tattoo</figcaption>
+        </figure>
+
+        <figure class="gallery-item">
+          <img src="/images/Shoulder%20Half%20Sleeve.jpg" alt="Shoulder tattoo" loading="lazy">
+          <figcaption>Shoulder Tattoo</figcaption>
+        </figure>
+
+        <figure class="gallery-item">
+          <img src="/images/ShouldertoNeckTattoo.jpg" alt="Shoulder to neck tattoo" loading="lazy">
+          <figcaption>Shoulder to Neck Tattoo</figcaption>
+        </figure>
+
+        <figure class="gallery-item">
+          <img src="/images/ForearmFullSleeve.jpg" alt="Full sleeve tattoo" loading="lazy">
+          <figcaption>Full Sleeve</figcaption>
+        </figure>
+
+        <figure class="gallery-item">
+          <img src="/images/HalfSleeveTattoo.jpg" alt="Half sleeve tattoo" loading="lazy">
+          <figcaption>Half Sleeve</figcaption>
+        </figure>
+
+        <figure class="gallery-item">
+          <img src="/images/Forearmtattoo.jpg" alt="Inner arm tattoo" loading="lazy">
+          <figcaption>Inner Arm</figcaption>
+        </figure>
+
+        <!-- FOREARM -->
+        <figure class="gallery-item">
+          <img id="tattooImage" src="/images/ForearmFullSleeve.jpg" alt="Forearm tattoo">
+          <figcaption>
+            <span class="cap-title">Fore Arm</span>
+            <label class="category-choices">
+              <span>Category</span>
+              <select id="categorySelect" onchange="changeImage()">
+                <option value="ForearmFullSleeve">Full Sleeve</option>
+                <option value="ForearmHalfSleeve">Half Sleeve</option>
+                <option value="ForearmMinimalist">Minimalist</option>
+                <option value="AngelForearmTattoo">Angel</option>
+              </select>
+            </label>
+          </figcaption>
+        </figure>
+
+        <figure class="gallery-item">
+          <img src="/images/Wristtattoo.jpg" alt="Wrist tattoo" loading="lazy">
+          <figcaption>Wrist Tattoo</figcaption>
+        </figure>
+
+        <figure class="gallery-item">
+          <img src="/images/Fullbacktattoo.jpg" alt="Full back tattoo" loading="lazy">
+          <figcaption>Full Back</figcaption>
+        </figure>
+
+        <figure class="gallery-item">
+          <img src="/images/HalfBackTattoo.jpg" alt="Half back tattoo" loading="lazy">
+          <figcaption>Half Back</figcaption>
+        </figure>
+
+        <figure class="gallery-item">
+          <img src="/images/SpineTattoo.jpg" alt="Spine tattoo" loading="lazy">
+          <figcaption>Spine Tattoo</figcaption>
+        </figure>
+
+        <figure class="gallery-item">
+          <img src="/images/LowerBack%20Tattoo.jpg" alt="Lower back tattoo" loading="lazy">
+          <figcaption>Lower Back</figcaption>
+        </figure>
+
+        <figure class="gallery-item">
+          <img src="/images/Ribcage.jpg" alt="Rib cage tattoo" loading="lazy">
+          <figcaption>Rib Cage Tattoo</figcaption>
+        </figure>
+
+        <figure class="gallery-item">
+          <img src="/images/ArmbandTattoo.jpg" alt="Armband tattoo" loading="lazy">
+          <figcaption>Armband Tattoo</figcaption>
+        </figure>
+
+        <!-- MINIMALIST -->
+        <figure class="gallery-item">
+          <img id="minimalistImage" src="/images/MinimalistLetterTattoo.jpg" alt="Minimalist tattoo">
+          <figcaption>
+            <span class="cap-title">Minimalist</span>
+            <label class="category-choices">
+              <span>Category</span>
+              <select id="minimalistSelect" onchange="changeMinimalistImage()">
+                <option value="MinimalistLetterTattoo.jpg">Minimalist Letter Tattoo</option>
+                <option value="MinimalistneckTattoo.jpg">Minimalist Cross Tattoo</option>
+                <option value="MinimalistButterfly.jpg">Minimalist Butterfly</option>
+                <option value="MinimalistCoupledesign.jpg">Minimalist Couple Design</option>
+              </select>
+            </label>
+          </figcaption>
+        </figure>
+
+        <!-- LEGS -->
+        <figure class="gallery-item">
+          <img id="legsImage" src="/images/LegsTattoo.jpg" alt="Legs tattoo">
+          <figcaption>
+            <span class="cap-title">Legs</span>
+            <label class="category-choices">
+              <span>Category</span>
+              <select id="legsSelect" onchange="changeLegsImage()">
+                <option value="LegsTattoo.jpg">Face with Roses Tattoo Leg</option>
+                <option value="LegsTattoo2.jpg">Leg Dragon Tattoo</option>
+              </select>
+            </label>
+          </figcaption>
+        </figure>
+
+        <figure class="gallery-item">
+          <img src="/images/LowerLegTattoo.jpg" alt="Lower legs tattoo" loading="lazy">
+          <figcaption>Lower Legs</figcaption>
+        </figure>
+
+        <figure class="gallery-item">
+          <img src="/images/Ankle.jpg" alt="Ankle tattoo" loading="lazy">
+          <figcaption>Ankle Tattoo</figcaption>
+        </figure>
+
+        <!-- BACK PIECE -->
+        <figure class="gallery-item">
+          <img id="backPieceImage" src="/images/Fullbacktattoo.jpg" alt="Back piece tattoo">
+          <figcaption>
+            <span class="cap-title">Back Piece</span>
+            <label class="category-choices">
+              <span>Category</span>
+              <select id="backPieceSelect" onchange="changeBackPieceImage()">
+                <option value="Fullbacktattoo">Full Back</option>
+                <option value="SpineTattoo">Spine Tattoo</option>
+                <option value="LowerBack%20Tattoo">Lower Back Tattoo</option>
+                <option value="HalfBackTattoo">Half Back</option>
+              </select>
+            </label>
+          </figcaption>
+        </figure>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- Enlarged picture -->
+  <div class="lightbox" id="lightbox" hidden>
+    <img id="lightboxImg" alt="">
+  </div>
+
+  <footer class="foot">
+    <p class="foot-brand">Totats <span>Skin Art Tattoo</span></p>
+    <p class="foot-text">Blk 8 Lot 4 James Street, Sarmiento Townville, City of San Jose del Monte, Bulacan</p>
+    <p class="foot-copy">© <%= new Date().getFullYear() %> Totats Skin Art Tattoo. All rights reserved.</p>
+  </footer>
+
+  <script>
+    function changeImage() {
+      var value = document.getElementById("categorySelect").value;
+      document.getElementById("tattooImage").src = "/images/" + value + ".jpg";
+    }
+
+    function changeMinimalistImage() {
+      var value = document.getElementById("minimalistSelect").value;
+      document.getElementById("minimalistImage").src = "/images/" + value;
+    }
+
+    function changeLegsImage() {
+      var value = document.getElementById("legsSelect").value;
+      document.getElementById("legsImage").src = "/images/" + value;
+    }
+
+    function changeBackPieceImage() {
+      var value = document.getElementById("backPieceSelect").value;
+      document.getElementById("backPieceImage").src = "/images/" + value + ".jpg";
+    }
+
+    // Click a picture to enlarge it
+    (function () {
+      var box = document.getElementById("lightbox");
+      var boxImg = document.getElementById("lightboxImg");
+
+      document.querySelectorAll(".gallery-item img").forEach(function (img) {
+        img.addEventListener("click", function () {
+          boxImg.src = img.src;
+          boxImg.alt = img.alt;
+          box.hidden = false;
+        });
+      });
+
+      box.addEventListener("click", function () { box.hidden = true; });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") box.hidden = true;
+      });
+    })();
+  </script>
+
+</body>
+</html>

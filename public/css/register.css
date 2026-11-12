@@ -13,6 +13,17 @@ body {
     align-items: center;
 }
 
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: url('/images/Tattoo No Matter2.jpg') center 25% / cover no-repeat;
+    filter: blur(5px) grayscale(100%);
+    transform: scale(1.05);
+    pointer-events: none;
+    z-index: -2;
+}
+
 .container {
     width: 420px;
     background: #fff;
