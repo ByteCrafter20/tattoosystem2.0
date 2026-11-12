@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!match) {
                 imageInput.value = '';      // reject the file
                 hasImage = false;
-                setHint('example. fullsleeve.jpg, fullback.jpg, fullsleeveright.jpg: ' + validPlacementNames().join(', '), true);
+                setHint('example.' + validPlacementNames().join(', '), true);
                 syncStyleCards();
                 return;
             }
