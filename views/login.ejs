@@ -6,6 +6,25 @@
     <title>Login</title>
 
     <link rel="stylesheet" href="/css/login.css">
+
+    <style>
+        /* Error message na lalabas sa pagitan ng "Login" at ng Username field */
+        .form-error {
+            display: none;
+            margin: 0 0 16px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            background: rgba(255, 77, 77, 0.12);
+            border: 1px solid rgba(255, 77, 77, 0.45);
+            color: #ff4d4d;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .form-error.show {
+            display: block;
+        }
+    </style>
 </head>
 <body>
 
@@ -16,6 +35,8 @@
             <img src="/images/TotatsSkinArtTattoo.jpg" alt="Totats Skin Art Tattoo Logo">
             <h2>Login</h2>
         </div>
+
+        <div id="loginError" class="form-error" role="alert" aria-live="polite"></div>
 
         <form id="loginForm">
             <div class="input-group">
@@ -38,7 +59,7 @@
                     required>
             </div>
 
-            <button type="submit">
+            <button type="submit" id="loginButton">
                 Login
             </button>
         </form>

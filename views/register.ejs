@@ -6,12 +6,42 @@
     <title>Client Registration</title>
 
     <link rel="stylesheet" href="/css/register.css">
+
+    <style>
+        /* Message box na lalabas sa pagitan ng title at ng Username field */
+        .form-message {
+            display: none;
+            margin: 0 0 16px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .form-message.show {
+            display: block;
+        }
+
+        .form-message.error {
+            background: rgba(255, 77, 77, 0.12);
+            border: 1px solid rgba(255, 77, 77, 0.45);
+            color: #ff4d4d;
+        }
+
+        .form-message.success {
+            background: rgba(46, 204, 113, 0.12);
+            border: 1px solid rgba(46, 204, 113, 0.45);
+            color: #2ecc71;
+        }
+    </style>
 </head>
 <body>
 
     <div class="container">
 
         <h2>Client Registration</h2>
+
+        <div id="registerMessage" class="form-message" role="alert" aria-live="polite"></div>
 
         <form id="registerForm">
             <div class="input-group">
@@ -34,7 +64,7 @@
                     required>
             </div>
 
-            <button type="submit">
+            <button type="submit" id="registerButton">
                 Register
             </button>
 

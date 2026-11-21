@@ -1,8 +1,31 @@
-document.getElementById('loginForm').addEventListener('submit', async function (e) {
-    e.preventDefault();
+const loginForm = document.getElementById('loginForm');
+const loginError = document.getElementById('loginError');
+const loginButton = document.getElementById('loginButton');
+const usernameInput = document.getElementById('username');
+const passwordInput = document.getElementById('password');
 
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
+function showError(message) {
+    loginError.textContent = message;
+    loginError.classList.add('show');
+}
+
+function clearError() {
+    loginError.textContent = '';
+    loginError.classList.remove('show');
+}
+
+// Mawawala ang error kapag nagsimula nang mag-type ulit ang user
+usernameInput.addEventListener('input', clearError);
+passwordInput.addEventListener('input', clearError);
+
+loginForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    clearError();
+
+    const username = usernameInput.value;
+    const password = passwordInput.value;
+
+    loginButton.disabled = true;
 
     try {
         const response = await fetch('/login', {
@@ -11,10 +34,16 @@ document.getElementById('loginForm').addEventListener('submit', async function (
             body: JSON.stringify({ username, password })
         });
 
-        const data = await response.json();
+        let data = {};
+
+        try {
+            data = await response.json();
+        } catch (parseError) {
+            data = {};
+        }
 
         if (!response.ok) {
-            alert(data.message || 'Login failed. Please check your credentials.');
+            showError(data.message || 'Login failed. Please check your credentials.');
             return;
         }
 
@@ -22,7 +51,8 @@ document.getElementById('loginForm').addEventListener('submit', async function (
         window.location.href = data.redirectUrl || '/clientdashboard';
 
     } catch (err) {
-        console.error('Login error:', err);
-        alert('Something went wrong. Please try again.');
+        showError('Something went wrong. Please try again.');
+    } finally {
+        loginButton.disabled = false;
     }
 });

@@ -6,6 +6,11 @@ import crypto from "crypto";
 import { fileURLToPath } from "url";
 import mongoose from "mongoose";
 import multer from "multer";
+import helmet from 'helmet';
+import mongoSanitize from 'express-mongo-sanitize';
+import rateLimit from 'express-rate-limit';
+import expressValidator from 'express-validator';
+const { body, validationResult } = expressValidator;
 import fs from "fs";
 import { spawn, exec } from "child_process";
 import connectDB from "./config/Database.js";
@@ -27,6 +32,27 @@ const PORT = process.env.PORT || 3000;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Kung naka-deploy sa likod ng proxy (Nginx, Render, Railway, etc.), ilagay
+// sa .env:  TRUST_PROXY=1   para tama ang IP na nakikita ng rate limiter.
+if (process.env.TRUST_PROXY) {
+    app.set("trust proxy", Number(process.env.TRUST_PROXY) || 1);
+}
+
+// ======================================================
+// SECURITY HEADERS  (helmet)
+// Naka-off ang Content-Security-Policy dahil gumagamit ang mga EJS pages
+// ng inline scripts / CDN. Kapag handa ka nang mag-set ng sariling CSP,
+// tanggalin ang "contentSecurityPolicy: false".
+// ======================================================
+
+app.use(
+    helmet({
+        contentSecurityPolicy: false,
+        crossOriginEmbedderPolicy: false,
+        crossOriginResourcePolicy: { policy: "cross-origin" }
+    })
+);
 
 // ======================================================
 // SIGNED LOGIN COOKIES  (SECURITY FIX)
@@ -51,6 +77,25 @@ if (!COOKIE_SECRET) {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(COOKIE_SECRET));
+
+// ======================================================
+// NOSQL INJECTION GUARD  (express-mongo-sanitize)
+// Tinatanggal ang "$" at "." na keys (hal. { "username": { "$ne": null } })
+// sa body at params. Manual itong tinatawag (sanitize) para gumana kahit
+// Express 4 o Express 5.
+// ======================================================
+
+app.use((req, res, next) => {
+    if (req.body) {
+        mongoSanitize.sanitize(req.body, { replaceWith: "_" });
+    }
+
+    if (req.params) {
+        mongoSanitize.sanitize(req.params, { replaceWith: "_" });
+    }
+
+    next();
+});
 
 // Ang valid (signed) na cookies lang ang ilalagay sa req.cookies.
 // Kaya hindi na kailangang baguhin ang middleware/requireRole.js at ang
@@ -78,6 +123,79 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+
+// ======================================================
+// RATE LIMITING + VALIDATION  (express-rate-limit / express-validator)
+// ======================================================
+
+// Max 10 na login attempts kada 15 minuto bawat IP.
+// Ang matagumpay na login ay hindi binibilang.
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    message: {
+        success: false,
+        message: "Too many login attempts. Please try again in 15 minutes."
+    }
+});
+
+// Max 10 na registration kada oras bawat IP.
+const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Too many registration attempts. Please try again later."
+    }
+});
+
+// Ibinabalik ang unang error sa parehong JSON format na ginagamit ng buong app.
+function handleValidation(req, res, next) {
+    const errors = validationResult(req);
+
+    if (errors.isEmpty()) {
+        return next();
+    }
+
+    return res.status(400).json({
+        success: false,
+        message: errors.array()[0].msg
+    });
+}
+
+const loginValidation = [
+    body("username")
+        .isString().withMessage("Username and password are required")
+        .trim()
+        .notEmpty().withMessage("Username and password are required")
+        .isLength({ max: 50 }).withMessage("Invalid username or password"),
+    body("password")
+        .isString().withMessage("Username and password are required")
+        .notEmpty().withMessage("Username and password are required")
+        .isLength({ max: 128 }).withMessage("Invalid username or password"),
+    handleValidation
+];
+
+const registerValidation = [
+    body("username")
+        .isString().withMessage("Please complete all registration fields.")
+        .trim()
+        .notEmpty().withMessage("Please complete all registration fields.")
+        .isLength({ min: 3 }).withMessage("Username must be at least 3 characters.")
+        .isLength({ max: 30 }).withMessage("Username must be at most 30 characters.")
+        .matches(/^[A-Za-z0-9._-]+$/).withMessage("Username can only use letters, numbers, dot, dash and underscore."),
+    body("password")
+        .isString().withMessage("Please complete all registration fields.")
+        .notEmpty().withMessage("Please complete all registration fields.")
+        .isLength({ min: 6 }).withMessage("Password must be at least 6 characters.")
+        .isLength({ max: 128 }).withMessage("Password must be at most 128 characters."),
+    handleValidation
+];
 
 // ======================================================
 // ROLES  (NEW)
@@ -1038,7 +1156,7 @@ app.get("/logout", (req, res) => {
     res.redirect("/login");
 });
 
-app.post("/login", async (req, res) => {
+app.post("/login", loginLimiter, loginValidation, async (req, res) => {
     let username = "";
     let password = "";
 
@@ -1118,7 +1236,7 @@ app.post("/login", async (req, res) => {
     }
 });
 
-app.post("/register", async function(req, res) {
+app.post("/register", registerLimiter, registerValidation, async function(req, res) {
     var username = "";
     var password = "";
 
