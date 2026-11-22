@@ -133,19 +133,18 @@
 
                     <div class="form-group">
                         <label for="title">Title</label>
-                        <input type="text" id="title" name="title" placeholder="Minimalist Tattoo" required>
+                        <input type="text" id="title" name="title" placeholder="" required>
                     </div>
 
                     <div class="form-group">
                         <label for="caption">Caption</label>
-                        <input type="text" id="caption" name="caption" placeholder="Fine line tattoo design">
+                        <input type="text" id="caption" name="caption" placeholder="">
                     </div>
 
                     <div class="form-group">
                         <label for="category">Category</label>
 
                         <select id="category" name="category">
-                            <option value="gallery">Client Tattoo Gallery</option>
                             <option value="design">Tattoo Design (choosable)</option>
                         </select>
                     </div>
@@ -162,33 +161,7 @@
             </form>
 
         </section>
-
-
-        <!-- ==================================================
-             CLIENT TATTOO GALLERY
-             ================================================== -->
-
-        <section class="gallery-section">
-
-            <div class="section-header">
-
-                <div>
-                    <h2>Client Tattoo Gallery</h2>
-
-                    <p>
-                        View tattoos previously created for our clients.
-                    </p>
-                </div>
-
             </div>
-
-            <!-- Rendered from MongoDB by /js/photos.js -->
-            <div class="gallery-grid" id="galleryGrid"></div>
-
-            <div class="no-records" id="noGallery">
-                No photos yet.
-            </div>
-
         </section>
 
 

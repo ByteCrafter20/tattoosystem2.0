@@ -1,14 +1,12 @@
 // photos.js
-// Photos Gallery - lahat ng larawan galing MongoDB.
+// Photos Gallery - designs galing MongoDB.
 // Admin lang ang may upload at delete. Ang client ay pumipili lang ng design.
 
 document.addEventListener('DOMContentLoaded', function () {
 
     var isAdmin = document.body.getAttribute('data-role') === 'admin';
 
-    var galleryGrid = document.getElementById('galleryGrid');
     var designGrid = document.getElementById('designGrid');
-    var noGallery = document.getElementById('noGallery');
     var noDesigns = document.getElementById('noDesigns');
 
     var uploadSection = document.getElementById('uploadSection');
@@ -23,8 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
     );
 
     // ==================================================
-    // LOGO - pindutin ang "Totats Skin Art Tattoo" para pumunta sa Dashboard
-    // (admin -> /dashboard, client -> /clientdashboard)
+    // LOGO - pindutin para pumunta sa Dashboard
     // ==================================================
 
     var logo = document.querySelector('.logo');
@@ -46,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    if (!galleryGrid && !designGrid) {
+    if (!designGrid) {
         return;
     }
 
@@ -61,50 +58,6 @@ document.addEventListener('DOMContentLoaded', function () {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
-    }
-
-    // BINAGO: ginagawang tamang browser path ang naka-save na image
-    // (hal. "public\uploads\a.jpg", "uploads/a.jpg", "a.jpg", "/uploads/a.jpg")
-    function imageSrc(photo) {
-        var keys = ['image', 'imageUrl', 'imagePath', 'photo', 'path', 'url', 'filename'];
-        var raw = '';
-
-        for (var i = 0; i < keys.length; i++) {
-            var value = photo[keys[i]];
-
-            if (typeof value === 'string' && value.trim()) {
-                raw = value.trim();
-                break;
-            }
-        }
-
-        if (!raw) {
-            return NO_IMAGE;
-        }
-
-        // Buong URL o base64: gamitin agad
-        if (/^(data:|https?:\/\/)/i.test(raw)) {
-            return raw;
-        }
-
-        // Alisin ang "public/" at ayusin ang backslash
-        var clean = raw.replace(/\\/g, '/').replace(/^\.?\/?public\//i, '').replace(/^\.\//, '');
-
-        if (clean.charAt(0) === '/') {
-            return clean;
-        }
-
-        // Filename lang ang naka-save -> nasa /uploads
-        if (clean.indexOf('/') === -1) {
-            return '/uploads/' + clean;
-        }
-
-        return '/' + clean;
-    }
-
-    function imgTag(photo) {
-        return '<img src="' + escapeHtml(imageSrc(photo)) + '" alt="' + escapeHtml(photo.title) + '" ' +
-            'loading="lazy" onerror="this.onerror=null;this.src=\'' + NO_IMAGE.replace(/'/g, '%27') + '\';">';
     }
 
     function request(url, options) {
@@ -132,82 +85,81 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-        // Listahan ng posibleng URL ng image, isa-isang susubukan
-        function imageCandidates(photo) {
-            var keys = ['image', 'imageUrl', 'imagePath', 'photo', 'path', 'url', 'filename', 'file'];
-            var raw = '';
-    
-            for (var i = 0; i < keys.length; i++) {
-                var value = photo[keys[i]];
-    
-                if (typeof value === 'string' && value.trim()) {
-                    raw = value.trim();
-                    break;
-                }
-            }
-    
-            if (!raw) {
-                return [];
-            }
-    
-            if (/^(data:|https?:\/\/)/i.test(raw)) {
-                return [raw];
-            }
-    
-            // Raw base64 na walang "data:" prefix
-            if (/^(\/9j\/|iVBOR|R0lGOD|UklGR)/.test(raw)) {
-                return ['data:image/jpeg;base64,' + raw];
-            }
-    
-            var clean = raw.replace(/\\/g, '/').replace(/^\.?\/?public\//i, '').replace(/^\.\//, '');
-            var base = clean.split('/').pop();
-            var list = [];
-    
-            if (clean.indexOf('/') !== -1) {
-                list.push('/' + clean.replace(/^\//, ''));
-            }
-    
-            ['/uploads/', '/images/', '/uploads/photos/', '/img/'].forEach(function (folder) {
-                list.push(folder + base);
-            });
-    
-            return list.filter(function (url, index) {
-                return list.indexOf(url) === index;
-            });
-        }
-    
-        function imageSrc(photo) {
-            return imageCandidates(photo)[0] || NO_IMAGE;
-        }
-    
-        function imgTag(photo) {
-            var list = imageCandidates(photo);
-    
-            return '<img src="' + escapeHtml(list[0] || NO_IMAGE) + '" ' +
-                'data-next="' + escapeHtml(list.slice(1).join('|')) + '" ' +
-                'alt="' + escapeHtml(photo.title) + '" loading="lazy">';
-        }
-    
-        // Kapag nag-error ang image, subukan ang susunod na URL
-        function onImgError(event) {
-            var img = event.target;
-    
-            if (!img || img.tagName !== 'IMG' || img.src === NO_IMAGE) {
-                return;
-            }
-    
-            var rest = (img.getAttribute('data-next') || '').split('|').filter(Boolean);
-    
-            if (rest.length) {
-                img.setAttribute('data-next', rest.slice(1).join('|'));
-                img.src = rest[0];
-            } else {
-                img.src = NO_IMAGE;
+    // Listahan ng posibleng URL ng image, isa-isang susubukan
+    function imageCandidates(photo) {
+        var keys = ['image', 'imageUrl', 'imagePath', 'photo', 'path', 'url', 'filename', 'file'];
+        var raw = '';
+
+        for (var i = 0; i < keys.length; i++) {
+            var value = photo[keys[i]];
+
+            if (typeof value === 'string' && value.trim()) {
+                raw = value.trim();
+                break;
             }
         }
-    
-        if (galleryGrid) { galleryGrid.addEventListener('error', onImgError, true); }
-        if (designGrid) { designGrid.addEventListener('error', onImgError, true); }
+
+        if (!raw) {
+            return [];
+        }
+
+        if (/^(data:|https?:\/\/)/i.test(raw)) {
+            return [raw];
+        }
+
+        // Raw base64 na walang "data:" prefix
+        if (/^(\/9j\/|iVBOR|R0lGOD|UklGR)/.test(raw)) {
+            return ['data:image/jpeg;base64,' + raw];
+        }
+
+        var clean = raw.replace(/\\/g, '/').replace(/^\.?\/?public\//i, '').replace(/^\.\//, '');
+        var base = clean.split('/').pop();
+        var list = [];
+
+        if (clean.indexOf('/') !== -1) {
+            list.push('/' + clean.replace(/^\//, ''));
+        }
+
+        ['/uploads/', '/images/', '/uploads/photos/', '/img/'].forEach(function (folder) {
+            list.push(folder + base);
+        });
+
+        return list.filter(function (url, index) {
+            return list.indexOf(url) === index;
+        });
+    }
+
+    function imageSrc(photo) {
+        return imageCandidates(photo)[0] || NO_IMAGE;
+    }
+
+    function imgTag(photo) {
+        var list = imageCandidates(photo);
+
+        return '<img src="' + escapeHtml(list[0] || NO_IMAGE) + '" ' +
+            'data-next="' + escapeHtml(list.slice(1).join('|')) + '" ' +
+            'alt="' + escapeHtml(photo.title) + '" loading="lazy">';
+    }
+
+    // Kapag nag-error ang image, subukan ang susunod na URL
+    function onImgError(event) {
+        var img = event.target;
+
+        if (!img || img.tagName !== 'IMG' || img.src === NO_IMAGE) {
+            return;
+        }
+
+        var rest = (img.getAttribute('data-next') || '').split('|').filter(Boolean);
+
+        if (rest.length) {
+            img.setAttribute('data-next', rest.slice(1).join('|'));
+            img.src = rest[0];
+        } else {
+            img.src = NO_IMAGE;
+        }
+    }
+
+    designGrid.addEventListener('error', onImgError, true);
 
     // ==================================================
     // RENDER
@@ -222,41 +174,13 @@ document.addEventListener('DOMContentLoaded', function () {
             escapeHtml(photo._id) + '">Delete</button>';
     }
 
-    function renderGallery(photos) {
-        if (!galleryGrid) {
-            return;
-        }
-
-        if (noGallery) {
-            noGallery.style.display = photos.length ? 'none' : 'block';
-        }
-
-        galleryGrid.innerHTML = photos.map(function (photo) {
-            return '<div class="photo-card">' +
-                '<div class="photo-placeholder">' +
-                    imgTag(photo) +
-                '</div>' +
-                '<div class="photo-info">' +
-                    '<h3>' + escapeHtml(photo.title) + '</h3>' +
-                    '<p>' + escapeHtml(photo.caption) + '</p>' +
-                    deleteButton(photo) +
-                '</div>' +
-            '</div>';
-        }).join('');
-    }
-
     function renderDesigns(photos) {
-        if (!designGrid) {
-            return;
-        }
-
         if (noDesigns) {
             noDesigns.style.display = photos.length ? 'none' : 'block';
         }
 
         designGrid.innerHTML = photos.map(function (photo) {
             // Ang client ay dinadala sa booking kasama ang napiling design.
-            // Ang "image" ang magiging Reference Photo sa appointment modal.
             var chooseLink = isAdmin
                 ? ''
                 : '<a href="/clientdashboard?design=' + encodeURIComponent(photo.title) +
@@ -295,9 +219,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 var photos = data.photos || [];
 
-                console.log('Photos loaded:', photos.length, photos[0]);
-
-                renderGallery(photos.filter(function (p) { return p.category !== 'design'; }));
                 renderDesigns(photos.filter(function (p) { return p.category === 'design'; }));
             })
             .catch(function (error) {
@@ -358,14 +279,14 @@ document.addEventListener('DOMContentLoaded', function () {
     // ADMIN - DELETE
     // ==================================================
 
-    function handleDelete(event) {
+    designGrid.addEventListener('click', function (event) {
         var button = event.target.closest('[data-delete-id]');
 
         if (!button || !isAdmin) {
             return;
         }
 
-        if (!confirm('Delete this photo?')) {
+        if (!confirm('Delete this design?')) {
             return;
         }
 
@@ -388,10 +309,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Error deleting photo:', error);
                 alert('An error occurred. Please try again.');
             });
-    }
-
-    if (galleryGrid) { galleryGrid.addEventListener('click', handleDelete); }
-    if (designGrid) { designGrid.addEventListener('click', handleDelete); }
+    });
 
     // ==================================================
     // INIT
