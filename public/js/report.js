@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ====== CHANGE THESE IF NEEDED ======
     var INVENTORY_URL = '/api/inventory';
-    var DEFAULT_LOW_LEVEL = 5;   // gagamitin kung walang minStock ang item
+    var DEFAULT_LOW_LEVEL = 5;   // gagamitin kung walang reorder level ang item
 
     // IDs ng 4 inventory cards sa HTML mo. Unang makita ang gagamitin.
     var CARD_IDS = {
@@ -186,7 +186,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // Isara kapag pinindot ang link o ang puting/madilim na area sa labas ng drawer
-        // (kailangan ang bagong CSS kung saan full-screen overlay ang #navLinks)
         mobileMenu.addEventListener('click', function (e) {
             if (e.target.closest('a') || e.target === mobileMenu) {
                 setMenuOpen(false);
@@ -230,15 +229,20 @@ document.addEventListener('DOMContentLoaded', function () {
         return isNaN(n) ? 0 : n;
     }
 
-    // Ginagamit pa rin para sa Low Stock / Out of Stock status (hindi na ipinapakita sa table)
+    // BINAGO: unang valid na number (hindi null / "" / undefined) ang gagamitin.
+    // Dati, Number(null) = 0 kaya laging 0 ang level kapag walang laman.
     function lowLevelOf(item) {
-        var n = Number(
-            item.minStock !== undefined ? item.minStock :
-            item.lowStockLevel !== undefined ? item.lowStockLevel :
-            item.reorderLevel
-        );
+        var candidates = [item.reorderLevel, item.minStock, item.lowStockLevel];
 
-        return isNaN(n) ? DEFAULT_LOW_LEVEL : n;
+        for (var i = 0; i < candidates.length; i++) {
+            var v = candidates[i];
+
+            if (v !== null && v !== undefined && v !== '' && !isNaN(Number(v))) {
+                return Number(v);
+            }
+        }
+
+        return DEFAULT_LOW_LEVEL;
     }
 
     // Returns: 'out' | 'low' | 'in'
@@ -262,6 +266,7 @@ document.addEventListener('DOMContentLoaded', function () {
         out: 'Out of Stock'
     };
 
+    // BINAGO: 6 columns na (kasama ang Unit at Reorder Level)
     function renderInventoryTable(list) {
         if (!inventoryTable) {
             return;
@@ -276,11 +281,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
             var name = item.name || item.itemName || item.item || '';
             var category = item.category || '';
+            var unit = item.unit || '-';
 
             return '<tr>' +
                 '<td>' + escapeHtml(name) + '</td>' +
                 '<td>' + escapeHtml(category) + '</td>' +
                 '<td>' + qtyOf(item) + '</td>' +
+                '<td>' + escapeHtml(unit) + '</td>' +
+                '<td>' + lowLevelOf(item) + '</td>' +
                 '<td><span class="stock-badge stock-' + key + '">' +
                     STOCK_LABELS[key] + '</span></td>' +
             '</tr>';

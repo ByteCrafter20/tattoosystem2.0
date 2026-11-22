@@ -266,6 +266,30 @@ body {
     border-radius: 6px;
 }
 
+.aftercare-card ol,
+.aftercare-card ul{
+  margin: .6rem 0 0 1.4rem;
+  text-align: left;
+}
+.aftercare-card li{ margin-bottom: .4rem; }
+.aftercare-card h3{ margin-top: 1.2rem; font-size: 1.05rem; }
+
+.about-card .goal-img,
+.goal-img{
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: auto !important;        /* walang fixed height */
+  max-height: none !important;
+  object-fit: contain !important; /* buo ang image, hindi crop */
+  margin: 1.2rem auto 0;
+  border-radius: 12px;
+}
+
+.goal-card{
+  overflow: visible;              /* para hindi maputol ng card */
+}
+
 @media (max-width: 1100px) {
 
     .navbar {
