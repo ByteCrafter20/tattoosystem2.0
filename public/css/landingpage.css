@@ -176,13 +176,13 @@
   #pricing{
     background:
       linear-gradient(rgba(11,11,13,.70), rgba(11,11,13,.78)),
-      url('/images/Background2.jpg') center / cover no-repeat,
+      url('/images/number2.jpg') center / cover no-repeat,
       var(--panel-2);
   }
   #booking{
     background:
       linear-gradient(rgba(11,11,13,.70), rgba(11,11,13,.78)),
-      url('/images/Background3.jpg') center / cover no-repeat,
+      url('/images/number3.jpg') center / cover no-repeat,
       var(--black);
   }
   #location{
