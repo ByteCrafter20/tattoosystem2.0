@@ -1116,6 +1116,10 @@ app.get("/aboutus", (req, res) => {
     res.render("aboutus");
 });
 
+app.get('/aboutpublic', (req, res) => {
+  res.render('aboutpublic'); // views/aboutpublic.ejs
+});
+
 // owner = admin-level, kaya "admin" ang ipinapasa para lumabas ang admin nav/upload
 app.get("/photos", (req, res) => {
     const cookieRole = req.cookies.role || "client";
