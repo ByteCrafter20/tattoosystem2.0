@@ -132,6 +132,83 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+        // Listahan ng posibleng URL ng image, isa-isang susubukan
+        function imageCandidates(photo) {
+            var keys = ['image', 'imageUrl', 'imagePath', 'photo', 'path', 'url', 'filename', 'file'];
+            var raw = '';
+    
+            for (var i = 0; i < keys.length; i++) {
+                var value = photo[keys[i]];
+    
+                if (typeof value === 'string' && value.trim()) {
+                    raw = value.trim();
+                    break;
+                }
+            }
+    
+            if (!raw) {
+                return [];
+            }
+    
+            if (/^(data:|https?:\/\/)/i.test(raw)) {
+                return [raw];
+            }
+    
+            // Raw base64 na walang "data:" prefix
+            if (/^(\/9j\/|iVBOR|R0lGOD|UklGR)/.test(raw)) {
+                return ['data:image/jpeg;base64,' + raw];
+            }
+    
+            var clean = raw.replace(/\\/g, '/').replace(/^\.?\/?public\//i, '').replace(/^\.\//, '');
+            var base = clean.split('/').pop();
+            var list = [];
+    
+            if (clean.indexOf('/') !== -1) {
+                list.push('/' + clean.replace(/^\//, ''));
+            }
+    
+            ['/uploads/', '/images/', '/uploads/photos/', '/img/'].forEach(function (folder) {
+                list.push(folder + base);
+            });
+    
+            return list.filter(function (url, index) {
+                return list.indexOf(url) === index;
+            });
+        }
+    
+        function imageSrc(photo) {
+            return imageCandidates(photo)[0] || NO_IMAGE;
+        }
+    
+        function imgTag(photo) {
+            var list = imageCandidates(photo);
+    
+            return '<img src="' + escapeHtml(list[0] || NO_IMAGE) + '" ' +
+                'data-next="' + escapeHtml(list.slice(1).join('|')) + '" ' +
+                'alt="' + escapeHtml(photo.title) + '" loading="lazy">';
+        }
+    
+        // Kapag nag-error ang image, subukan ang susunod na URL
+        function onImgError(event) {
+            var img = event.target;
+    
+            if (!img || img.tagName !== 'IMG' || img.src === NO_IMAGE) {
+                return;
+            }
+    
+            var rest = (img.getAttribute('data-next') || '').split('|').filter(Boolean);
+    
+            if (rest.length) {
+                img.setAttribute('data-next', rest.slice(1).join('|'));
+                img.src = rest[0];
+            } else {
+                img.src = NO_IMAGE;
+            }
+        }
+    
+        if (galleryGrid) { galleryGrid.addEventListener('error', onImgError, true); }
+        if (designGrid) { designGrid.addEventListener('error', onImgError, true); }
+
     // ==================================================
     // RENDER
     // ==================================================
