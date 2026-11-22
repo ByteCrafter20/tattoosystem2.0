@@ -179,12 +179,12 @@ img{height:auto}
 /* Walang fixed attachment: normal cover lang para hindi mag-glitch */
 #styles{
   background: var(--overlay),
-              url('/images/StyeBackground.jpg.jpg') 60% 20% / 125% auto no-repeat,
+              url('/images/StyleBackground.jpg') center 20% / cover no-repeat,
               var(--black);
 }
 #pricing{
   background: var(--overlay),
-              url('/images/PricingBackground.jpg.jpg') 60% 20% / 125% auto no-repeat,
+              url('/images/PricingBackground.jpg') center 20% / cover no-repeat,
               var(--panel-2);
 }
 
