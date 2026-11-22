@@ -14,6 +14,14 @@ document.addEventListener('DOMContentLoaded', function () {
     var uploadSection = document.getElementById('uploadSection');
     var uploadForm = document.getElementById('uploadForm');
 
+    // Lalabas kung hindi ma-load ang image (SVG placeholder)
+    var NO_IMAGE = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">' +
+        '<rect width="100%" height="100%" fill="#222"/>' +
+        '<text x="50%" y="50%" fill="#888" font-family="Arial" font-size="20" ' +
+        'text-anchor="middle" dominant-baseline="middle">Image not found</text></svg>'
+    );
+
     // ==================================================
     // LOGO - pindutin ang "Totats Skin Art Tattoo" para pumunta sa Dashboard
     // (admin -> /dashboard, client -> /clientdashboard)
@@ -53,6 +61,50 @@ document.addEventListener('DOMContentLoaded', function () {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    }
+
+    // BINAGO: ginagawang tamang browser path ang naka-save na image
+    // (hal. "public\uploads\a.jpg", "uploads/a.jpg", "a.jpg", "/uploads/a.jpg")
+    function imageSrc(photo) {
+        var keys = ['image', 'imageUrl', 'imagePath', 'photo', 'path', 'url', 'filename'];
+        var raw = '';
+
+        for (var i = 0; i < keys.length; i++) {
+            var value = photo[keys[i]];
+
+            if (typeof value === 'string' && value.trim()) {
+                raw = value.trim();
+                break;
+            }
+        }
+
+        if (!raw) {
+            return NO_IMAGE;
+        }
+
+        // Buong URL o base64: gamitin agad
+        if (/^(data:|https?:\/\/)/i.test(raw)) {
+            return raw;
+        }
+
+        // Alisin ang "public/" at ayusin ang backslash
+        var clean = raw.replace(/\\/g, '/').replace(/^\.?\/?public\//i, '').replace(/^\.\//, '');
+
+        if (clean.charAt(0) === '/') {
+            return clean;
+        }
+
+        // Filename lang ang naka-save -> nasa /uploads
+        if (clean.indexOf('/') === -1) {
+            return '/uploads/' + clean;
+        }
+
+        return '/' + clean;
+    }
+
+    function imgTag(photo) {
+        return '<img src="' + escapeHtml(imageSrc(photo)) + '" alt="' + escapeHtml(photo.title) + '" ' +
+            'loading="lazy" onerror="this.onerror=null;this.src=\'' + NO_IMAGE.replace(/'/g, '%27') + '\';">';
     }
 
     function request(url, options) {
@@ -105,7 +157,7 @@ document.addEventListener('DOMContentLoaded', function () {
         galleryGrid.innerHTML = photos.map(function (photo) {
             return '<div class="photo-card">' +
                 '<div class="photo-placeholder">' +
-                    '<img src="' + escapeHtml(photo.image) + '" alt="' + escapeHtml(photo.title) + '">' +
+                    imgTag(photo) +
                 '</div>' +
                 '<div class="photo-info">' +
                     '<h3>' + escapeHtml(photo.title) + '</h3>' +
@@ -131,12 +183,12 @@ document.addEventListener('DOMContentLoaded', function () {
             var chooseLink = isAdmin
                 ? ''
                 : '<a href="/clientdashboard?design=' + encodeURIComponent(photo.title) +
-                      '&image=' + encodeURIComponent(photo.image) +
+                      '&image=' + encodeURIComponent(imageSrc(photo)) +
                       '" class="choose-btn">Choose Design</a>';
 
             return '<div class="design-card">' +
                 '<div class="photo-placeholder">' +
-                    '<img src="' + escapeHtml(photo.image) + '" alt="' + escapeHtml(photo.title) + '">' +
+                    imgTag(photo) +
                 '</div>' +
                 '<div class="photo-info">' +
                     '<h3>' + escapeHtml(photo.title) + '</h3>' +
@@ -165,6 +217,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 var photos = data.photos || [];
+
+                console.log('Photos loaded:', photos.length, photos[0]);
 
                 renderGallery(photos.filter(function (p) { return p.category !== 'design'; }));
                 renderDesigns(photos.filter(function (p) { return p.category === 'design'; }));
